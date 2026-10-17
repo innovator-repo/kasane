@@ -1,5 +1,6 @@
 package app.kasane
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -16,9 +17,9 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -30,10 +31,29 @@ import app.kasane.ui.TodayScreen
 import app.kasane.ui.WeekScreen
 
 class MainActivity : ComponentActivity() {
+    private val tab = mutableIntStateOf(0)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        tab.intValue = savedInstanceState?.getInt(EXTRA_TAB) ?: intent.getIntExtra(EXTRA_TAB, 0)
         enableEdgeToEdge()
-        setContent { KasaneTheme { Kasane() } }
+        setContent { KasaneTheme { Kasane(tab) } }
+    }
+
+    // A widget tap while the app is open switches to the widget's tab.
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (intent.hasExtra(EXTRA_TAB)) tab.intValue = intent.getIntExtra(EXTRA_TAB, 0)
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt(EXTRA_TAB, tab.intValue)
+    }
+
+    companion object {
+        /** Which tab to open on, from a widget: 0 Today, 1 Momentum, 2 Week, 3 Tasks. */
+        const val EXTRA_TAB = "tab"
     }
 }
 
@@ -47,8 +67,8 @@ private val tabs = listOf(
 )
 
 @Composable
-private fun Kasane() {
-    var tab by rememberSaveable { mutableIntStateOf(0) }
+private fun Kasane(selected: MutableIntState) {
+    var tab by selected
     Scaffold(
         bottomBar = {
             NavigationBar {

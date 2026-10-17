@@ -5,7 +5,16 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -51,34 +60,64 @@ fun TodayScreen(modifier: Modifier = Modifier) {
     val today = remember(journal) { LocalDate.now() }
     val due = journal.items.filter { it.dueOn(today) }
     val counted = due.count { Tier.of(it, journal.entry(today, it.id)) >= Tier.TARGET }
-    val now = LocalTime.now()
-    // The block for the time of day comes first; the rest follow in order.
+    val order = blockOrder(LocalTime.now())
+
+    var adding by remember { mutableStateOf(false) }
+    var removing by remember { mutableStateOf<Item?>(null) }
+
+    Box(modifier.fillMaxSize()) {
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 96.dp)) {
+            item {
+                Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 8.dp)) {
+                    Text(today.format(DateTimeFormatter.ofPattern("EEEE, d MMMM")),
+                        style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.today_progress, counted, due.size),
+                        style = MaterialTheme.typography.headlineMedium)
+                    Text(stringResource(R.string.habit_hint), style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            item { SetupCard() }
+            for (block in order) {
+                val items = due.filter { it.block == block }
+                if (items.isEmpty()) continue
+                item(key = "h-$block") { SectionLabel(blockLabel(block)) }
+                items(items, key = { it.id }) { item ->
+                    ItemRow(item, journal.entry(today, item.id), onRemove = { removing = item }) {
+                        store.setEntry(today, item.id, it)
+                    }
+                }
+            }
+        }
+        FloatingActionButton(onClick = { adding = true }, modifier = Modifier.align(Alignment.BottomEnd).padding(20.dp)) {
+            Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.habit_add))
+        }
+    }
+    if (adding) AddHabitDialog(onDismiss = { adding = false }) { item ->
+        store.addItem(item)
+        adding = false
+    }
+    removing?.let { item ->
+        AlertDialog(
+            onDismissRequest = { removing = null },
+            title = { Text(item.title) },
+            text = { Text(stringResource(R.string.habit_remove_explain)) },
+            confirmButton = {
+                TextButton(onClick = { store.pauseItem(item.id); removing = null }) { Text(stringResource(R.string.habit_remove)) }
+            },
+            dismissButton = { TextButton(onClick = { removing = null }) { Text(stringResource(R.string.cancel)) } },
+        )
+    }
+}
+
+/** The block for the time of day comes first; the rest follow in order. */
+internal fun blockOrder(now: LocalTime): List<Block> {
     val current = when {
         now.isBefore(LocalTime.NOON) -> Block.MORNING
         now.isBefore(LocalTime.of(20, 0)) -> Block.DAY
         else -> Block.NIGHT
     }
-    val order = listOf(current) + listOf(Block.MORNING, Block.DAY, Block.NIGHT).filter { it != current } + Block.ALL_DAY
-
-    LazyColumn(modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)) {
-        item {
-            Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 8.dp)) {
-                Text(today.format(DateTimeFormatter.ofPattern("EEEE, d MMMM")),
-                    style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(stringResource(R.string.today_progress, counted, due.size),
-                    style = MaterialTheme.typography.headlineMedium)
-            }
-        }
-        item { SetupCard() }
-        for (block in order) {
-            val items = due.filter { it.block == block }
-            if (items.isEmpty()) continue
-            item(key = "h-$block") { SectionLabel(blockLabel(block)) }
-            items(items, key = { it.id }) { item ->
-                ItemRow(item, journal.entry(today, item.id)) { store.setEntry(today, item.id, it) }
-            }
-        }
-    }
+    return listOf(current) + listOf(Block.MORNING, Block.DAY, Block.NIGHT).filter { it != current } + Block.ALL_DAY
 }
 
 @Composable
@@ -98,8 +137,9 @@ fun SectionLabel(text: String) {
         modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 6.dp))
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun ItemRow(item: Item, entry: Entry, onChange: (Entry) -> Unit) {
+private fun ItemRow(item: Item, entry: Entry, onRemove: () -> Unit, onChange: (Entry) -> Unit) {
     val context = LocalContext.current
     val counted = Tier.of(item, entry) >= Tier.TARGET
     Row(
@@ -107,7 +147,8 @@ private fun ItemRow(item: Item, entry: Entry, onChange: (Entry) -> Unit) {
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 2.dp)
             .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
-            .clickable(enabled = item.kind == Kind.CHECK) { onChange(entry.copy(done = !entry.done)) }
+            // Long press takes an item off Today.
+            .combinedClickable(onLongClick = onRemove) { if (item.kind == Kind.CHECK) onChange(entry.copy(done = !entry.done)) }
             .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

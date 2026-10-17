@@ -22,6 +22,27 @@
     <string name="rule_undo">Undo</string>
     <string name="open">Open</string>
 
+    <string name="habit_hint">Tap + to add a habit. Press and hold one to remove it.</string>
+    <string name="habit_add">Add habit</string>
+    <string name="habit_kind">How you track it</string>
+    <string name="habit_kind_check">Tick</string>
+    <string name="habit_kind_count">Count</string>
+    <string name="habit_kind_timed">Minutes</string>
+    <string name="habit_kind_rule">Rule</string>
+    <string name="habit_kind_check_hint">Done or not done, like reading.</string>
+    <string name="habit_kind_count_hint">A number with a daily goal, like squats.</string>
+    <string name="habit_kind_timed_hint">Minutes with a daily goal, like meditation.</string>
+    <string name="habit_kind_rule_hint">Something to avoid all day. It counts as kept unless you mark a slip.</string>
+    <string name="habit_goal_count">Daily goal</string>
+    <string name="habit_goal_minutes">Daily goal in minutes</string>
+    <string name="habit_when">When</string>
+    <string name="habit_days">Days</string>
+    <string name="habit_every_day">Every day</string>
+    <string name="habit_weekdays">Monday to Friday</string>
+    <string name="habit_add_reminder">Add a daily reminder</string>
+    <string name="habit_remove">Remove</string>
+    <string name="habit_remove_explain">It comes off Today and stops reminding you. What you logged so far stays in Momentum and Week.</string>
+
     <string name="setup_title">Make reminders arrive on time</string>
     <string name="setup_notifications">Kasane needs permission to show reminders.</string>
     <string name="setup_alarms">Allow alarms and reminders, so each reminder fires at its exact time.</string>
@@ -52,4 +73,20 @@
     <string name="save">Save</string>
     <string name="cancel">Cancel</string>
     <string name="delete">Delete</string>
+
+    <string name="widget_today_name">Today</string>
+    <string name="widget_today_description">What is still open today, logged in one tap</string>
+    <string name="widget_tasks_name">Coming up</string>
+    <string name="widget_tasks_description">Your next tasks and the days left for each</string>
+    <string name="widget_all_done">Everything for today is done.</string>
+    <string name="widget_next">Next: %1$s</string>
+    <string name="widget_done">Done</string>
+    <string name="widget_no_tasks">Nothing coming up.</string>
+    <string name="widget_overdue">Overdue</string>
+    <string name="widget_today">Today</string>
+    <string name="widget_tomorrow">Tomorrow</string>
+    <plurals name="widget_in_days">
+        <item quantity="one">In %d day</item>
+        <item quantity="other">In %d days</item>
+    </plurals>
 </resources>

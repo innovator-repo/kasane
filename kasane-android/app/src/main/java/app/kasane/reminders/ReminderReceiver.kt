@@ -12,6 +12,7 @@ import androidx.core.content.ContextCompat
 import app.kasane.KasaneApp
 import app.kasane.MainActivity
 import app.kasane.R
+import app.kasane.widget.Widgets
 
 class ReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -34,6 +35,7 @@ class ReminderReceiver : BroadcastReceiver() {
             NotificationManagerCompat.from(context).notify(key.hashCode(), notification)
         }
         AlarmScheduler.rearm(context)
+        Widgets.refresh(context)
     }
 
     companion object {

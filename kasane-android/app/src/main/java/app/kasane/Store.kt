@@ -3,9 +3,11 @@ package app.kasane
 import android.content.Context
 import app.kasane.core.Codec
 import app.kasane.core.Entry
+import app.kasane.core.Item
 import app.kasane.core.Journal
 import app.kasane.core.Task
 import app.kasane.reminders.AlarmScheduler
+import app.kasane.widget.Widgets
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,9 +34,17 @@ class Store(private val context: Context) {
         temp.renameTo(file)
         state.value = next
         AlarmScheduler.rearm(context)
+        Widgets.refresh(context)
     }
 
     fun setEntry(date: LocalDate, itemId: String, entry: Entry) = update { it.withEntry(date, itemId, entry) }
+
+    fun addItem(item: Item) = update { it.copy(items = it.items + item) }
+
+    /** Takes an item off Today and out of reminders, keeping its history for the analysis. */
+    fun pauseItem(id: String) = update { journal ->
+        journal.copy(items = journal.items.map { if (it.id == id) it.copy(paused = true) else it })
+    }
 
     fun addTask(title: String, date: LocalDate, remindAt: Int?) = update {
         it.copy(tasks = it.tasks + Task(UUID.randomUUID().toString(), title.trim(), date.toString(), remindAt))

@@ -25,7 +25,7 @@ val Geist = FontFamily(
 private val Ink = Color(0xFF3D4FB8)
 private val InkLight = Color(0xFFAAB6FF)
 
-private val Light = lightColorScheme(
+internal val Light = lightColorScheme(
     primary = Ink,
     onPrimary = Color.White,
     primaryContainer = Color(0xFFE4E8FF),
@@ -40,7 +40,7 @@ private val Light = lightColorScheme(
     error = Color(0xFFB3261E),
 )
 
-private val Dark = darkColorScheme(
+internal val Dark = darkColorScheme(
     primary = InkLight,
     onPrimary = Color(0xFF0E1652),
     primaryContainer = Color(0xFF26316F),
