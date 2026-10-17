@@ -11,10 +11,20 @@ android {
         applicationId = "app.kasane"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
+        versionCode = 2
         versionName = "0.1.0"
         // The Lume core is built for these ABIs by tools/build-core.sh.
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
+    }
+
+    // A fixed debug key in the repo, so each CI build installs over the last one without losing data.
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
     }
 
     buildTypes {
@@ -22,7 +32,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // Signed with the debug key until a release key is set up, so the APK installs.
+            // Signed with the debug key until a release key is set up.
             signingConfig = signingConfigs.getByName("debug")
         }
     }

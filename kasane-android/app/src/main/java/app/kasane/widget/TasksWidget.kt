@@ -54,9 +54,12 @@ class TasksWidget : GlanceAppWidget() {
 private fun TasksContent(tasks: List<Task>) {
     val context = LocalContext.current
     val today = LocalDate.now()
-    val open = tasks.filter { !it.done }.sortedBy { it.date }
+    val open = tasks.filter { it.open && it.nextDate(today) != null }.sortedBy { it.nextDate(today) }
     WidgetCard(tab = 3) {
-        Text(context.getString(R.string.widget_tasks_name), style = headlineStyle(18))
+        Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(context.getString(R.string.widget_tasks_name), style = headlineStyle(18), modifier = GlanceModifier.defaultWeight())
+            AddTaskButton()
+        }
         Spacer(GlanceModifier.height(8.dp))
         if (open.isEmpty()) {
             Text(context.getString(R.string.widget_no_tasks), style = bodyStyle())
@@ -71,7 +74,7 @@ private fun TasksContent(tasks: List<Task>) {
 @Composable
 private fun TaskRow(task: Task, today: LocalDate) {
     val context = LocalContext.current
-    val date = LocalDate.parse(task.date)
+    val date = task.nextDate(today) ?: return
     val days = ChronoUnit.DAYS.between(today, date)
     val whenText = when {
         days < 0 -> context.getString(R.string.widget_overdue)

@@ -89,6 +89,38 @@ class CoreTest {
         assertFalse(office.dueOn(LocalDate.of(2026, 10, 17))) // Saturday
     }
 
+    @Test fun chosenWeekdaysOverrideTheDaysSetting() {
+        val gym = Item("gym", "Gym", Kind.CHECK, Block.DAY, weekdays = listOf(2, 4)) // Tuesday, Thursday
+        assertTrue(gym.dueOn(LocalDate.of(2026, 10, 15))) // Thursday
+        assertFalse(gym.dueOn(LocalDate.of(2026, 10, 16))) // Friday
+    }
+
+    @Test fun repeatingTaskMovesToItsNextDayWhenTickedOff() {
+        val friday = LocalDate.of(2026, 10, 16)
+        val task = Task("t", "Bins", "2026-10-01", remindAt = 18 * 60, repeat = listOf(1, 5)) // Monday, Friday
+        assertEquals(friday, task.nextDate(friday))
+        val ticked = task.finish(friday, true)
+        assertTrue(ticked.doneOn(friday))
+        assertTrue(ticked.open)
+        assertEquals(LocalDate.of(2026, 10, 19), ticked.nextDate(friday))
+        assertFalse(ticked.finish(friday, false).doneOn(friday))
+        // Missed days do not pile up: on Saturday the next one is Monday.
+        assertEquals(LocalDate.of(2026, 10, 19), task.nextDate(friday.plusDays(1)))
+        // Nothing before its start date.
+        assertEquals(LocalDate.of(2026, 10, 23), task.copy(date = "2026-10-20").nextDate(friday))
+    }
+
+    @Test fun repeatingTaskRemindsAtItsNextOpenTime() {
+        val task = Task("t", "Bins", "2026-10-01", remindAt = 18 * 60, repeat = listOf(1, 5))
+        val journal = Journal(items = emptyList(), tasks = listOf(task))
+        val morning = LocalDateTime.of(2026, 10, 16, 9, 0) // Friday
+        assertEquals(LocalDateTime.of(2026, 10, 16, 18, 0), Reminders.upcoming(journal, morning).single().at)
+        val evening = morning.withHour(19)
+        assertEquals(LocalDateTime.of(2026, 10, 19, 18, 0), Reminders.upcoming(journal, evening).single().at)
+        val ticked = journal.copy(tasks = listOf(task.finish(morning.toLocalDate(), true)))
+        assertEquals(LocalDateTime.of(2026, 10, 19, 18, 0), Reminders.upcoming(ticked, morning).single().at)
+    }
+
     @Test fun sleepLockCoversTenToEight() {
         val lock = SleepLock()
         assertTrue(lock.isLocked(LocalTime.of(22, 0)))

@@ -46,12 +46,16 @@ class Store(private val context: Context) {
         journal.copy(items = journal.items.map { if (it.id == id) it.copy(paused = true) else it })
     }
 
-    fun addTask(title: String, date: LocalDate, remindAt: Int?) = update {
-        it.copy(tasks = it.tasks + Task(UUID.randomUUID().toString(), title.trim(), date.toString(), remindAt))
+    /** `repeat` holds days of the week, 1 = Monday; empty for a one-off task on `date`. */
+    fun addTask(title: String, date: LocalDate, remindAt: Int?, repeat: List<Int> = emptyList()) = update {
+        it.copy(tasks = it.tasks + Task(UUID.randomUUID().toString(), title.trim(), date.toString(), remindAt,
+            repeat = repeat.sorted()))
     }
 
+    /** For a repeating task this ticks off only the next occurrence. */
     fun setTaskDone(id: String, done: Boolean) = update { journal ->
-        journal.copy(tasks = journal.tasks.map { if (it.id == id) it.copy(done = done) else it })
+        val today = LocalDate.now()
+        journal.copy(tasks = journal.tasks.map { if (it.id == id) it.finish(today, done) else it })
     }
 
     fun deleteTask(id: String) = update { journal -> journal.copy(tasks = journal.tasks.filterNot { it.id == id }) }

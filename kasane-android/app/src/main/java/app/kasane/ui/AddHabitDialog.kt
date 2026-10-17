@@ -35,10 +35,13 @@ import app.kasane.core.Days
 import app.kasane.core.Item
 import app.kasane.core.Kind
 import app.kasane.core.SleepLock
+import java.time.DayOfWeek
 import java.time.LocalTime
+import java.time.format.TextStyle
+import java.util.Locale
 import java.util.UUID
 
-/** Adds a habit or rule of your own to Today, with an optional daily reminder. */
+/** Adds a habit or rule of your own to Today, on chosen days, with an optional reminder. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddHabitDialog(onDismiss: () -> Unit, onAdd: (Item) -> Unit) {
@@ -46,13 +49,15 @@ fun AddHabitDialog(onDismiss: () -> Unit, onAdd: (Item) -> Unit) {
     var kind by remember { mutableStateOf(Kind.CHECK) }
     var target by remember { mutableStateOf("") }
     var block by remember { mutableStateOf(Block.DAY) }
-    var days by remember { mutableStateOf(Days.EVERY_DAY) }
+    // Null means the days picked in `weekdays`.
+    var days by remember { mutableStateOf<Days?>(Days.EVERY_DAY) }
+    var weekdays by remember { mutableStateOf(emptyList<Int>()) }
     var minute by remember { mutableStateOf<Int?>(null) }
     var pickTime by remember { mutableStateOf(false) }
     val lock = remember { SleepLock() }
     val needsTarget = kind == Kind.COUNT || kind == Kind.TIMED
     val goal = target.toIntOrNull()?.takeIf { it > 0 }
-    val ready = title.isNotBlank() && (!needsTarget || goal != null)
+    val ready = title.isNotBlank() && (!needsTarget || goal != null) && (days != null || weekdays.isNotEmpty())
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -86,7 +91,9 @@ fun AddHabitDialog(onDismiss: () -> Unit, onAdd: (Item) -> Unit) {
                 }
 
                 Label(stringResource(R.string.habit_days))
-                Chips(listOf(Days.EVERY_DAY to R.string.habit_every_day, Days.OFFICE_DAYS to R.string.habit_weekdays), days) { days = it }
+                Chips(listOf(Days.EVERY_DAY to R.string.habit_every_day, Days.OFFICE_DAYS to R.string.habit_weekdays,
+                    null to R.string.habit_pick_days), days) { days = it }
+                if (days == null) WeekdayPicker(weekdays) { weekdays = it }
 
                 if (kind != Kind.RULE) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -111,7 +118,8 @@ fun AddHabitDialog(onDismiss: () -> Unit, onAdd: (Item) -> Unit) {
                     title = title.trim(),
                     kind = kind,
                     block = if (kind == Kind.RULE) Block.ALL_DAY else block,
-                    days = days,
+                    days = days ?: Days.EVERY_DAY,
+                    weekdays = if (days == null) weekdays.sorted() else emptyList(),
                     target = if (needsTarget) goal ?: 0 else 0,
                     remindAt = if (kind == Kind.RULE) null else minute,
                 ))
@@ -134,15 +142,33 @@ fun AddHabitDialog(onDismiss: () -> Unit, onAdd: (Item) -> Unit) {
     }
 }
 
+/** Toggles for Monday to Sunday. Days are 1 = Monday to 7 = Sunday. */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-private fun Label(text: String) {
+internal fun WeekdayPicker(selected: List<Int>, onChange: (List<Int>) -> Unit) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        for (day in DayOfWeek.entries) {
+            val on = day.value in selected
+            FilterChip(selected = on, onClick = { onChange(if (on) selected - day.value else selected + day.value) },
+                label = { Text(day.getDisplayName(TextStyle.SHORT, Locale.getDefault())) })
+        }
+    }
+}
+
+/** Short names of the chosen days, such as "Mon, Thu", or null when it is every day. */
+internal fun weekdaysLabel(days: List<Int>): String? =
+    if (days.toSet().size == 7) null
+    else days.sorted().joinToString(", ") { DayOfWeek.of(it).getDisplayName(TextStyle.SHORT, Locale.getDefault()) }
+
+@Composable
+internal fun Label(text: String) {
     Text(text, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(top = 14.dp, bottom = 2.dp))
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-private fun <T> Chips(options: List<Pair<T, Int>>, selected: T, onSelect: (T) -> Unit) {
+internal fun <T> Chips(options: List<Pair<T, Int>>, selected: T, onSelect: (T) -> Unit) {
     FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         for ((value, label) in options) {
             FilterChip(selected = value == selected, onClick = { onSelect(value) }, label = { Text(stringResource(label)) })

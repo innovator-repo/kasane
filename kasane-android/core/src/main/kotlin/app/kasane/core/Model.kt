@@ -55,8 +55,11 @@ data class Item(
     val opens: String? = null,
     /** The item a slip on this rule counts as, for the slip analysis. */
     val isRelapse: Boolean = false,
+    /** Chosen days of the week, 1 = Monday to 7 = Sunday. When set, used instead of `days`. */
+    val weekdays: List<Int> = emptyList(),
 ) {
-    fun dueOn(date: LocalDate): Boolean = !paused && days.includes(date)
+    fun dueOn(date: LocalDate): Boolean =
+        !paused && if (weekdays.isEmpty()) days.includes(date) else date.dayOfWeek.value in weekdays
 }
 
 /** What was logged for one item on one day. */
@@ -68,17 +71,50 @@ data class Entry(
     val slipped: Boolean = false,
 )
 
-/** A one-off task on a date, such as an exam. */
+/** A task on a date, such as an exam, or one that repeats on chosen days of the week. */
 @Serializable
 data class Task(
     val id: String,
     val title: String,
-    /** ISO date, yyyy-mm-dd. */
+    /** ISO date, yyyy-mm-dd. For a repeating task, the first day it can fall on. */
     val date: String,
     /** Minutes after midnight for the reminder, or null for none. */
     val remindAt: Int? = null,
     val done: Boolean = false,
-)
+    /** Days of the week it repeats on, 1 = Monday to 7 = Sunday. Empty for a one-off task. */
+    val repeat: List<Int> = emptyList(),
+    /** For a repeating task, the ISO date of the latest occurrence ticked off. */
+    val doneThrough: String? = null,
+) {
+    val repeats: Boolean get() = repeat.isNotEmpty()
+
+    /** Whether it still belongs in the open list. A repeating task never runs out. */
+    val open: Boolean get() = repeats || !done
+
+    /** Ticked off for today, or for good if it is a one-off. */
+    fun doneOn(today: LocalDate): Boolean = if (repeats) doneThrough == today.toString() else done
+
+    /**
+     * The date it is next due: a one-off task's own date, or a repeating task's
+     * first chosen day from today that has not been ticked off. Missed days do not pile up.
+     */
+    fun nextDate(today: LocalDate): LocalDate? {
+        val start = runCatching { LocalDate.parse(date) }.getOrNull() ?: return null
+        if (!repeats) return start
+        var from = maxOf(today, start)
+        val ticked = doneThrough?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+        if (ticked != null && !ticked.isBefore(from)) from = ticked.plusDays(1)
+        return (0L..6L).map { from.plusDays(it) }.firstOrNull { it.dayOfWeek.value in repeat }
+    }
+
+    /** Ticks it off, or back on. For a repeating task that is the next occurrence only. */
+    fun finish(today: LocalDate, finished: Boolean): Task = when {
+        !repeats -> copy(done = finished)
+        finished -> copy(doneThrough = nextDate(today)?.toString() ?: doneThrough)
+        doneThrough == today.toString() -> copy(doneThrough = null)
+        else -> this
+    }
+}
 
 /** Everything the app stores. Days are keyed by ISO date. */
 @Serializable

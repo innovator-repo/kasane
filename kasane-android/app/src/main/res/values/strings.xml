@@ -39,7 +39,8 @@
     <string name="habit_days">Days</string>
     <string name="habit_every_day">Every day</string>
     <string name="habit_weekdays">Monday to Friday</string>
-    <string name="habit_add_reminder">Add a daily reminder</string>
+    <string name="habit_add_reminder">Add a reminder</string>
+    <string name="habit_pick_days">Pick days</string>
     <string name="habit_remove">Remove</string>
     <string name="habit_remove_explain">It comes off Today and stops reminding you. What you logged so far stays in Momentum and Week.</string>
 
@@ -63,12 +64,17 @@
     <string name="week_not_enough">Not enough days yet. This fills in after a couple of weeks of logging.</string>
     <string name="loading">Working it out…</string>
 
-    <string name="tasks_empty">No tasks coming up. Add exams and one-off things here.</string>
+    <string name="tasks_empty">No tasks coming up. Add exams, one-off things and tasks that repeat here.</string>
     <string name="tasks_add">Add task</string>
     <string name="tasks_what">What</string>
     <string name="tasks_remind_at">Remind at %1$s</string>
     <string name="tasks_no_reminder">No reminder</string>
     <string name="tasks_clear">Clear</string>
+    <string name="tasks_repeat">Repeat</string>
+    <string name="tasks_once">Once</string>
+    <string name="tasks_starts">Starts %1$s</string>
+    <string name="tasks_done_today">Done today</string>
+    <string name="tasks_next">next %1$s</string>
     <string name="tasks_in_lock">That time is inside the 22:00 to 08:00 sleep lock, so the reminder will be skipped.</string>
     <string name="save">Save</string>
     <string name="cancel">Cancel</string>
@@ -81,6 +87,7 @@
     <string name="widget_all_done">Everything for today is done.</string>
     <string name="widget_next">Next: %1$s</string>
     <string name="widget_done">Done</string>
+    <string name="widget_add_task">+ Task</string>
     <string name="widget_no_tasks">Nothing coming up.</string>
     <string name="widget_overdue">Overdue</string>
     <string name="widget_today">Today</string>

@@ -29,6 +29,7 @@ import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,14 +50,21 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
 @Composable
-fun TasksScreen(modifier: Modifier = Modifier) {
+fun TasksScreen(modifier: Modifier = Modifier, addRequested: Boolean = false, onAddShown: () -> Unit = {}) {
     val store = LocalContext.current.store
     val journal by store.journal.collectAsStateWithLifecycle()
     var adding by remember { mutableStateOf(false) }
+    // A widget's add button opens the form straight away.
+    LaunchedEffect(addRequested) {
+        if (addRequested) {
+            adding = true
+            onAddShown()
+        }
+    }
     val today = LocalDate.now()
-    // Open tasks by date, then finished ones from the last week, newest first.
-    val open = journal.tasks.filter { !it.done }.sortedBy { it.date }
-    val finished = journal.tasks.filter { it.done && it.date >= today.minusDays(7).toString() }.sortedByDescending { it.date }
+    // Open tasks by the date they are next due, then finished one-offs from the last week, newest first.
+    val open = journal.tasks.filter { it.open }.sortedBy { it.nextDate(today) ?: LocalDate.MAX }
+    val finished = journal.tasks.filter { !it.open && it.date >= today.minusDays(7).toString() }.sortedByDescending { it.date }
 
     Box(modifier.fillMaxSize()) {
         LazyColumn(Modifier.fillMaxSize()) {
@@ -71,19 +79,29 @@ fun TasksScreen(modifier: Modifier = Modifier) {
                 }
             }
             items(open + finished, key = { it.id }) { task ->
-                val date = runCatching { LocalDate.parse(task.date) }.getOrNull()
-                val late = date != null && date.isBefore(today) && !task.done
+                val date = task.nextDate(today)
+                val done = task.doneOn(today)
+                val late = date != null && date.isBefore(today) && !done
                 Row(
                     Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 2.dp)
                         .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
                         .padding(start = 4.dp, end = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Checkbox(checked = task.done, onCheckedChange = { store.setTaskDone(task.id, it) })
+                    Checkbox(checked = done, onCheckedChange = { store.setTaskDone(task.id, it) })
                     Column(Modifier.weight(1f).padding(vertical = 10.dp)) {
                         Text(task.title, style = MaterialTheme.typography.bodyLarge)
-                        val time = task.remindAt?.let { " · %02d:%02d".format(it / 60, it % 60) } ?: ""
-                        Text((date?.format(DateTimeFormatter.ofPattern("EEE d MMM")) ?: task.date) + time,
+                        val time = task.remindAt?.let { "%02d:%02d".format(it / 60, it % 60) }
+                        val day = date?.format(DateTimeFormatter.ofPattern("EEE d MMM")) ?: task.date
+                        val line = if (task.repeats) {
+                            listOfNotNull(
+                                if (done) stringResource(R.string.tasks_done_today)
+                                else weekdaysLabel(task.repeat) ?: stringResource(R.string.habit_every_day),
+                                time,
+                                stringResource(R.string.tasks_next, day),
+                            )
+                        } else listOfNotNull(day, time)
+                        Text(line.joinToString(" · "),
                             style = MaterialTheme.typography.bodySmall,
                             color = if (late) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
                     }
@@ -97,18 +115,20 @@ fun TasksScreen(modifier: Modifier = Modifier) {
             Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.tasks_add))
         }
     }
-    if (adding) AddTaskDialog(onDismiss = { adding = false }) { title, date, minute ->
-        store.addTask(title, date, minute)
+    if (adding) AddTaskDialog(onDismiss = { adding = false }) { title, date, minute, repeat ->
+        store.addTask(title, date, minute, repeat)
         adding = false
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AddTaskDialog(onDismiss: () -> Unit, onAdd: (String, LocalDate, Int?) -> Unit) {
+private fun AddTaskDialog(onDismiss: () -> Unit, onAdd: (String, LocalDate, Int?, List<Int>) -> Unit) {
     var title by remember { mutableStateOf("") }
     var date by remember { mutableStateOf(LocalDate.now()) }
     var minute by remember { mutableStateOf<Int?>(9 * 60) }
+    var repeat by remember { mutableStateOf(Repeat.ONCE) }
+    var weekdays by remember { mutableStateOf(emptyList<Int>()) }
     var pickDate by remember { mutableStateOf(false) }
     var pickTime by remember { mutableStateOf(false) }
     val lock = remember { SleepLock() }
@@ -120,8 +140,13 @@ private fun AddTaskDialog(onDismiss: () -> Unit, onAdd: (String, LocalDate, Int?
             Column {
                 OutlinedTextField(value = title, onValueChange = { title = it }, singleLine = true,
                     label = { Text(stringResource(R.string.tasks_what)) }, modifier = Modifier.fillMaxWidth())
+                Label(stringResource(R.string.tasks_repeat))
+                Chips(listOf(Repeat.ONCE to R.string.tasks_once, Repeat.EVERY_DAY to R.string.habit_every_day,
+                    Repeat.PICK to R.string.habit_pick_days), repeat) { repeat = it }
+                if (repeat == Repeat.PICK) WeekdayPicker(weekdays) { weekdays = it }
                 TextButton(onClick = { pickDate = true }) {
-                    Text(date.format(DateTimeFormatter.ofPattern("EEEE d MMMM yyyy")))
+                    val day = date.format(DateTimeFormatter.ofPattern("EEEE d MMMM yyyy"))
+                    Text(if (repeat == Repeat.ONCE) day else stringResource(R.string.tasks_starts, day))
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     TextButton(onClick = { pickTime = true }) {
@@ -138,7 +163,13 @@ private fun AddTaskDialog(onDismiss: () -> Unit, onAdd: (String, LocalDate, Int?
             }
         },
         confirmButton = {
-            TextButton(enabled = title.isNotBlank(), onClick = { onAdd(title, date, minute) }) { Text(stringResource(R.string.save)) }
+            val days = when (repeat) {
+                Repeat.ONCE -> emptyList()
+                Repeat.EVERY_DAY -> (1..7).toList()
+                Repeat.PICK -> weekdays
+            }
+            TextButton(enabled = title.isNotBlank() && (repeat != Repeat.PICK || weekdays.isNotEmpty()),
+                onClick = { onAdd(title, date, minute, days) }) { Text(stringResource(R.string.save)) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
@@ -169,3 +200,5 @@ private fun AddTaskDialog(onDismiss: () -> Unit, onAdd: (String, LocalDate, Int?
         )
     }
 }
+
+private enum class Repeat { ONCE, EVERY_DAY, PICK }

@@ -12,14 +12,17 @@ import androidx.glance.action.clickable
 import androidx.glance.appwidget.appWidgetBackground
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.background
+import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.ColumnScope
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.padding
 import androidx.glance.material3.ColorProviders
 import androidx.glance.text.FontWeight
+import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import app.kasane.MainActivity
+import app.kasane.R
 import app.kasane.ui.Dark
 import app.kasane.ui.Light
 
@@ -40,6 +43,23 @@ internal fun WidgetCard(tab: Int, content: @Composable ColumnScope.() -> Unit) {
             .cornerRadius(20.dp).padding(14.dp).clickable(actionStartActivity(open)),
         content = content,
     )
+}
+
+/** A small "+ Task" button that opens the app's add-task form. */
+@Composable
+internal fun AddTaskButton() {
+    val context = LocalContext.current
+    val add = Intent(context, MainActivity::class.java)
+        .putExtra(MainActivity.EXTRA_TAB, 3)
+        .putExtra(MainActivity.EXTRA_ADD_TASK, true)
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+    Box(
+        GlanceModifier.background(GlanceTheme.colors.primaryContainer).cornerRadius(14.dp)
+            .padding(horizontal = 10.dp, vertical = 4.dp).clickable(actionStartActivity(add)),
+    ) {
+        Text(context.getString(R.string.widget_add_task), style = TextStyle(color = GlanceTheme.colors.onPrimaryContainer,
+            fontSize = 13.sp, fontWeight = FontWeight.Medium))
+    }
 }
 
 @Composable
