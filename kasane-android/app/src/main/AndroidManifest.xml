@@ -44,6 +44,13 @@
                 <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
             </intent-filter>
         </receiver>
+        <!-- Katachi sends how many of the day's puzzles are solved. -->
+        <receiver android:name=".PuzzleCountReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="app.kasane.action.LOG_COUNT" />
+            </intent-filter>
+        </receiver>
+
         <receiver android:name=".widget.TodayWidgetReceiver" android:exported="true"
             android:label="@string/widget_today_name">
             <intent-filter>
