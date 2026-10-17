@@ -68,16 +68,21 @@ class TodayWidget : GlanceAppWidget() {
     }
 }
 
+/** Today's open items to do, current block first. Rules count as kept until a slip is marked, so they are left out. */
+internal fun openItems(journal: Journal, today: LocalDate): List<Item> {
+    val due = journal.items.filter { it.dueOn(today) }
+    return blockOrder(LocalTime.now()).flatMap { block ->
+        due.filter { it.block == block && it.kind != Kind.RULE && Tier.of(it, journal.entry(today, it.id)) < Tier.TARGET }
+    }
+}
+
 @Composable
 private fun TodayContent(journal: Journal) {
     val context = LocalContext.current
     val today = LocalDate.now()
     val due = journal.items.filter { it.dueOn(today) }
     val done = due.count { Tier.of(it, journal.entry(today, it.id)) >= Tier.TARGET }
-    // Rules count as kept until a slip is marked, so only things to do are listed.
-    val open = blockOrder(LocalTime.now()).flatMap { block ->
-        due.filter { it.block == block && it.kind != Kind.RULE && Tier.of(it, journal.entry(today, it.id)) < Tier.TARGET }
-    }
+    val open = openItems(journal, today)
     val roomy = LocalSize.current.height >= 160.dp
 
     WidgetCard(tab = 0) {
@@ -107,7 +112,7 @@ private fun TodayContent(journal: Journal) {
 }
 
 @Composable
-private fun OpenItemRow(item: Item, journal: Journal, today: LocalDate) {
+internal fun OpenItemRow(item: Item, journal: Journal, today: LocalDate) {
     val context = LocalContext.current
     val entry = journal.entry(today, item.id)
     val detail = when (item.kind) {

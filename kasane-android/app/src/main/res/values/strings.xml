@@ -84,6 +84,10 @@
     <string name="widget_today_description">What is still open today, logged in one tap</string>
     <string name="widget_tasks_name">Coming up</string>
     <string name="widget_tasks_description">Your next tasks and the days left for each</string>
+    <string name="widget_all_name">Habits and tasks</string>
+    <string name="widget_all_description">Today's open habits and your next tasks in one list</string>
+    <string name="widget_habits">Habits</string>
+    <string name="widget_tasks">Tasks</string>
     <string name="widget_all_done">Everything for today is done.</string>
     <string name="widget_next">Next: %1$s</string>
     <string name="widget_done">Done</string>

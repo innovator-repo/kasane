@@ -50,11 +50,15 @@ class TasksWidget : GlanceAppWidget() {
     }
 }
 
+/** Open tasks by the date they are next due. */
+internal fun openTasks(tasks: List<Task>, today: LocalDate): List<Task> =
+    tasks.filter { it.open && it.nextDate(today) != null }.sortedBy { it.nextDate(today) }
+
 @Composable
 private fun TasksContent(tasks: List<Task>) {
     val context = LocalContext.current
     val today = LocalDate.now()
-    val open = tasks.filter { it.open && it.nextDate(today) != null }.sortedBy { it.nextDate(today) }
+    val open = openTasks(tasks, today)
     WidgetCard(tab = 3) {
         Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(context.getString(R.string.widget_tasks_name), style = headlineStyle(18), modifier = GlanceModifier.defaultWeight())
@@ -72,7 +76,7 @@ private fun TasksContent(tasks: List<Task>) {
 }
 
 @Composable
-private fun TaskRow(task: Task, today: LocalDate) {
+internal fun TaskRow(task: Task, today: LocalDate) {
     val context = LocalContext.current
     val date = task.nextDate(today) ?: return
     val days = ChronoUnit.DAYS.between(today, date)

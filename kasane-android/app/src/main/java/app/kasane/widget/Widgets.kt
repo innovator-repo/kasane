@@ -25,6 +25,7 @@ object Widgets {
         scope.launch {
             TodayWidget().updateAll(app)
             TasksWidget().updateAll(app)
+            AllWidget().updateAll(app)
         }
     }
 }
@@ -35,6 +36,10 @@ class TodayWidgetReceiver : GlanceAppWidgetReceiver() {
 
 class TasksWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget = TasksWidget()
+}
+
+class AllWidgetReceiver : GlanceAppWidgetReceiver() {
+    override val glanceAppWidget = AllWidget()
 }
 
 internal val ItemIdKey = ActionParameters.Key<String>("item")
