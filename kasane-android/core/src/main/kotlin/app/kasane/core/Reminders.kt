@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 
 /** One reminder to arm with the alarm clock. */
-data class Reminder(val key: String, val title: String, val at: LocalDateTime)
+data class Reminder(val key: String, val title: String, val at: LocalDateTime, val alert: Alert = Alert.MEDIUM)
 
 object Reminders {
     /**
@@ -24,7 +24,7 @@ object Reminders {
                 val at = LocalDateTime.of(date, time)
                 if (!at.isAfter(now) || !item.dueOn(date)) continue
                 if (offset == 0L && Tier.of(item, journal.entry(date, item.id)) >= Tier.TARGET) continue
-                out.add(Reminder("item:${item.id}", item.title, at))
+                out.add(Reminder("item:${item.id}", item.title, at, item.alert))
                 break
             }
         }
@@ -38,13 +38,13 @@ object Reminders {
                 val at = LocalDateTime.of(first, time).takeIf { it.isAfter(now) }
                     ?: task.nextDate(first.plusDays(1))?.let { LocalDateTime.of(it, time) }?.takeIf { it.isAfter(now) }
                     ?: continue
-                out.add(Reminder("task:${task.id}", task.title, at))
+                out.add(Reminder("task:${task.id}", task.title, at, task.alert))
                 continue
             }
             if (task.done) continue
             val date = runCatching { LocalDate.parse(task.date) }.getOrNull() ?: continue
             val at = LocalDateTime.of(date, LocalTime.of(minute / 60, minute % 60))
-            if (at.isAfter(now)) out.add(Reminder("task:${task.id}", task.title, at))
+            if (at.isAfter(now)) out.add(Reminder("task:${task.id}", task.title, at, task.alert))
         }
         return out.sortedBy { it.at }
     }

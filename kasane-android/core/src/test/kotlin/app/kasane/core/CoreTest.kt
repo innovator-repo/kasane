@@ -151,6 +151,15 @@ class CoreTest {
         assertEquals(LocalDateTime.of(2026, 10, 16, 9, 30), reminders.first { it.key == "item:office_site" }.at)
     }
 
+    @Test fun remindersCarryTheirAlertLevel() {
+        val task = Task("t", "Exam", "2026-10-20", remindAt = 9 * 60, alert = Alert.STRONG)
+        val journal = Journal(items = emptyList(), tasks = listOf(task))
+        assertEquals(Alert.STRONG, Reminders.upcoming(journal, LocalDateTime.of(2026, 10, 16, 9, 0)).single().alert)
+        // Older journals without the field read back as medium.
+        val old = Codec.decode("""{"items":[],"tasks":[{"id":"t","title":"Exam","date":"2026-10-20"}]}""")
+        assertEquals(Alert.MEDIUM, old.tasks.single().alert)
+    }
+
     @Test fun codecRoundTripsAndAddsNewCatalogItems() {
         val journal = Journal(items = Catalog.defaults.take(3)).withEntry(LocalDate.of(2026, 10, 16), "yoga", Entry(done = true))
         val back = Codec.decode(Codec.encode(journal))

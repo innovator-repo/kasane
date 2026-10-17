@@ -30,6 +30,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import app.kasane.R
+import app.kasane.core.Alert
 import app.kasane.core.Block
 import app.kasane.core.Days
 import app.kasane.core.Item
@@ -41,18 +42,23 @@ import java.time.format.TextStyle
 import java.util.Locale
 import java.util.UUID
 
-/** Adds a habit or rule of your own to Today, on chosen days, with an optional reminder. */
+/**
+ * Adds a habit or rule of your own to Today, on chosen days, with an optional
+ * reminder. Given an `existing` item it edits that one instead, keeping its id
+ * and history; how it is tracked stays fixed so past entries still read right.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddHabitDialog(onDismiss: () -> Unit, onAdd: (Item) -> Unit) {
-    var title by remember { mutableStateOf("") }
-    var kind by remember { mutableStateOf(Kind.CHECK) }
-    var target by remember { mutableStateOf("") }
-    var block by remember { mutableStateOf(Block.DAY) }
+fun AddHabitDialog(onDismiss: () -> Unit, existing: Item? = null, onRemove: () -> Unit = {}, onAdd: (Item) -> Unit) {
+    var title by remember { mutableStateOf(existing?.title ?: "") }
+    var kind by remember { mutableStateOf(existing?.kind ?: Kind.CHECK) }
+    var target by remember { mutableStateOf(existing?.target?.takeIf { it > 0 }?.toString() ?: "") }
+    var block by remember { mutableStateOf(existing?.block?.takeIf { it != Block.ALL_DAY } ?: Block.DAY) }
     // Null means the days picked in `weekdays`.
-    var days by remember { mutableStateOf<Days?>(Days.EVERY_DAY) }
-    var weekdays by remember { mutableStateOf(emptyList<Int>()) }
-    var minute by remember { mutableStateOf<Int?>(null) }
+    var days by remember { mutableStateOf<Days?>(if (existing?.weekdays?.isNotEmpty() == true) null else existing?.days ?: Days.EVERY_DAY) }
+    var weekdays by remember { mutableStateOf(existing?.weekdays ?: emptyList()) }
+    var minute by remember { mutableStateOf(existing?.remindAt) }
+    var alert by remember { mutableStateOf(existing?.alert ?: Alert.MEDIUM) }
     var pickTime by remember { mutableStateOf(false) }
     val lock = remember { SleepLock() }
     val needsTarget = kind == Kind.COUNT || kind == Kind.TIMED
@@ -61,7 +67,7 @@ fun AddHabitDialog(onDismiss: () -> Unit, onAdd: (Item) -> Unit) {
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.habit_add)) },
+        title = { Text(stringResource(if (existing == null) R.string.habit_add else R.string.habit_edit)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 OutlinedTextField(value = title, onValueChange = { title = it }, singleLine = true,
@@ -69,7 +75,8 @@ fun AddHabitDialog(onDismiss: () -> Unit, onAdd: (Item) -> Unit) {
 
                 Label(stringResource(R.string.habit_kind))
                 Chips(listOf(Kind.CHECK to R.string.habit_kind_check, Kind.COUNT to R.string.habit_kind_count,
-                    Kind.TIMED to R.string.habit_kind_timed, Kind.RULE to R.string.habit_kind_rule), kind) { kind = it }
+                    Kind.TIMED to R.string.habit_kind_timed, Kind.RULE to R.string.habit_kind_rule)
+                    .filter { existing == null || it.first == kind }, kind) { kind = it }
                 Text(stringResource(when (kind) {
                     Kind.CHECK -> R.string.habit_kind_check_hint
                     Kind.COUNT -> R.string.habit_kind_count_hint
@@ -108,13 +115,14 @@ fun AddHabitDialog(onDismiss: () -> Unit, onAdd: (Item) -> Unit) {
                         Text(stringResource(R.string.tasks_in_lock), style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error)
                     }
+                    if (minute != null) AlertPicker(alert) { alert = it }
                 }
             }
         },
         confirmButton = {
             TextButton(enabled = ready, onClick = {
-                onAdd(Item(
-                    id = "own_" + UUID.randomUUID().toString(),
+                val base = existing ?: Item(id = "own_" + UUID.randomUUID().toString(), title = "", kind = kind, block = block)
+                onAdd(base.copy(
                     title = title.trim(),
                     kind = kind,
                     block = if (kind == Kind.RULE) Block.ALL_DAY else block,
@@ -122,10 +130,16 @@ fun AddHabitDialog(onDismiss: () -> Unit, onAdd: (Item) -> Unit) {
                     weekdays = if (days == null) weekdays.sorted() else emptyList(),
                     target = if (needsTarget) goal ?: 0 else 0,
                     remindAt = if (kind == Kind.RULE) null else minute,
+                    alert = alert,
                 ))
             }) { Text(stringResource(R.string.save)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+        dismissButton = {
+            Row {
+                if (existing != null) TextButton(onClick = onRemove) { Text(stringResource(R.string.habit_remove)) }
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+            }
+        },
     )
 
     if (pickTime) {
@@ -159,6 +173,19 @@ internal fun WeekdayPicker(selected: List<Int>, onChange: (List<Int>) -> Unit) {
 internal fun weekdaysLabel(days: List<Int>): String? =
     if (days.toSet().size == 7) null
     else days.sorted().joinToString(", ") { DayOfWeek.of(it).getDisplayName(TextStyle.SHORT, Locale.getDefault()) }
+
+/** Light, medium or strong, with a line on what each one does. */
+@Composable
+internal fun AlertPicker(selected: Alert, onSelect: (Alert) -> Unit) {
+    Label(stringResource(R.string.alert_title))
+    Chips(listOf(Alert.LIGHT to R.string.alert_light, Alert.MEDIUM to R.string.alert_medium,
+        Alert.STRONG to R.string.alert_strong), selected, onSelect)
+    Text(stringResource(when (selected) {
+        Alert.LIGHT -> R.string.alert_light_hint
+        Alert.MEDIUM -> R.string.alert_medium_hint
+        Alert.STRONG -> R.string.alert_strong_hint
+    }), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+}
 
 @Composable
 internal fun Label(text: String) {

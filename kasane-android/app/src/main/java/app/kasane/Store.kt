@@ -1,6 +1,7 @@
 package app.kasane
 
 import android.content.Context
+import app.kasane.core.Alert
 import app.kasane.core.Codec
 import app.kasane.core.Entry
 import app.kasane.core.Item
@@ -41,15 +42,19 @@ class Store(private val context: Context) {
 
     fun addItem(item: Item) = update { it.copy(items = it.items + item) }
 
+    fun updateItem(item: Item) = update { journal ->
+        journal.copy(items = journal.items.map { if (it.id == item.id) item else it })
+    }
+
     /** Takes an item off Today and out of reminders, keeping its history for the analysis. */
     fun pauseItem(id: String) = update { journal ->
         journal.copy(items = journal.items.map { if (it.id == id) it.copy(paused = true) else it })
     }
 
     /** `repeat` holds days of the week, 1 = Monday; empty for a one-off task on `date`. */
-    fun addTask(title: String, date: LocalDate, remindAt: Int?, repeat: List<Int> = emptyList()) = update {
+    fun addTask(title: String, date: LocalDate, remindAt: Int?, repeat: List<Int> = emptyList(), alert: Alert = Alert.MEDIUM) = update {
         it.copy(tasks = it.tasks + Task(UUID.randomUUID().toString(), title.trim(), date.toString(), remindAt,
-            repeat = repeat.sorted()))
+            repeat = repeat.sorted(), alert = alert))
     }
 
     /** For a repeating task this ticks off only the next occurrence. */

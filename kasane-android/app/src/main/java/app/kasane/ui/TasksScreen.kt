@@ -41,6 +41,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.kasane.R
+import app.kasane.core.Alert
 import app.kasane.core.SleepLock
 import app.kasane.store
 import java.time.Instant
@@ -115,20 +116,21 @@ fun TasksScreen(modifier: Modifier = Modifier, addRequested: Boolean = false, on
             Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.tasks_add))
         }
     }
-    if (adding) AddTaskDialog(onDismiss = { adding = false }) { title, date, minute, repeat ->
-        store.addTask(title, date, minute, repeat)
+    if (adding) AddTaskDialog(onDismiss = { adding = false }) { title, date, minute, repeat, alert ->
+        store.addTask(title, date, minute, repeat, alert)
         adding = false
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AddTaskDialog(onDismiss: () -> Unit, onAdd: (String, LocalDate, Int?, List<Int>) -> Unit) {
+private fun AddTaskDialog(onDismiss: () -> Unit, onAdd: (String, LocalDate, Int?, List<Int>, Alert) -> Unit) {
     var title by remember { mutableStateOf("") }
     var date by remember { mutableStateOf(LocalDate.now()) }
     var minute by remember { mutableStateOf<Int?>(9 * 60) }
     var repeat by remember { mutableStateOf(Repeat.ONCE) }
     var weekdays by remember { mutableStateOf(emptyList<Int>()) }
+    var alert by remember { mutableStateOf(Alert.MEDIUM) }
     var pickDate by remember { mutableStateOf(false) }
     var pickTime by remember { mutableStateOf(false) }
     val lock = remember { SleepLock() }
@@ -160,6 +162,7 @@ private fun AddTaskDialog(onDismiss: () -> Unit, onAdd: (String, LocalDate, Int?
                     Text(stringResource(R.string.tasks_in_lock), style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error)
                 }
+                if (minute != null) AlertPicker(alert) { alert = it }
             }
         },
         confirmButton = {
@@ -169,7 +172,7 @@ private fun AddTaskDialog(onDismiss: () -> Unit, onAdd: (String, LocalDate, Int?
                 Repeat.PICK -> weekdays
             }
             TextButton(enabled = title.isNotBlank() && (repeat != Repeat.PICK || weekdays.isNotEmpty()),
-                onClick = { onAdd(title, date, minute, days) }) { Text(stringResource(R.string.save)) }
+                onClick = { onAdd(title, date, minute, days, alert) }) { Text(stringResource(R.string.save)) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )

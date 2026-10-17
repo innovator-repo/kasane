@@ -63,6 +63,7 @@ fun TodayScreen(modifier: Modifier = Modifier) {
     val order = blockOrder(LocalTime.now())
 
     var adding by remember { mutableStateOf(false) }
+    var editing by remember { mutableStateOf<Item?>(null) }
     var removing by remember { mutableStateOf<Item?>(null) }
 
     Box(modifier.fillMaxSize()) {
@@ -83,7 +84,7 @@ fun TodayScreen(modifier: Modifier = Modifier) {
                 if (items.isEmpty()) continue
                 item(key = "h-$block") { SectionLabel(blockLabel(block)) }
                 items(items, key = { it.id }) { item ->
-                    ItemRow(item, journal.entry(today, item.id), onRemove = { removing = item }) {
+                    ItemRow(item, journal.entry(today, item.id), onRemove = { editing = item }) {
                         store.setEntry(today, item.id, it)
                     }
                 }
@@ -96,6 +97,13 @@ fun TodayScreen(modifier: Modifier = Modifier) {
     if (adding) AddHabitDialog(onDismiss = { adding = false }) { item ->
         store.addItem(item)
         adding = false
+    }
+    editing?.let { item ->
+        AddHabitDialog(onDismiss = { editing = null }, existing = item,
+            onRemove = { editing = null; removing = item }) { changed ->
+            store.updateItem(changed)
+            editing = null
+        }
     }
     removing?.let { item ->
         AlertDialog(

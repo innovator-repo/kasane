@@ -22,8 +22,9 @@
     <string name="rule_undo">Undo</string>
     <string name="open">Open</string>
 
-    <string name="habit_hint">Tap + to add a habit. Press and hold one to remove it.</string>
+    <string name="habit_hint">Tap + to add a habit. Press and hold one to edit or remove it.</string>
     <string name="habit_add">Add habit</string>
+    <string name="habit_edit">Edit habit</string>
     <string name="habit_kind">How you track it</string>
     <string name="habit_kind_check">Tick</string>
     <string name="habit_kind_count">Count</string>
@@ -70,6 +71,15 @@
     <string name="tasks_remind_at">Remind at %1$s</string>
     <string name="tasks_no_reminder">No reminder</string>
     <string name="tasks_clear">Clear</string>
+    <string name="alert_title">Sound</string>
+    <string name="alert_light">Light</string>
+    <string name="alert_medium">Medium</string>
+    <string name="alert_strong">Strong</string>
+    <string name="alert_light_hint">A short buzz, no sound.</string>
+    <string name="alert_medium_hint">The notification sound and a buzz.</string>
+    <string name="alert_strong_hint">The alarm sound, ringing until you open or swipe away the reminder.</string>
+    <string name="channel_reminders_light">Reminders, light</string>
+    <string name="channel_reminders_strong">Reminders, strong</string>
     <string name="tasks_repeat">Repeat</string>
     <string name="tasks_once">Once</string>
     <string name="tasks_starts">Starts %1$s</string>

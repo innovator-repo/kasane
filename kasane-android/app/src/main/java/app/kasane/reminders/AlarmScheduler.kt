@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import app.kasane.MainActivity
+import app.kasane.core.Alert
 import app.kasane.core.Reminders
 import app.kasane.store
 import java.time.LocalDateTime
@@ -24,11 +25,11 @@ object AlarmScheduler {
     fun rearm(context: Context) {
         val alarms = context.getSystemService(AlarmManager::class.java)
         val upcoming = Reminders.upcoming(context.store.journal.value, LocalDateTime.now()).take(SLOTS)
-        for (slot in 0 until SLOTS) alarms.cancel(pending(context, slot, null, null))
+        for (slot in 0 until SLOTS) alarms.cancel(pending(context, slot, null, null, null))
         val exact = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarms.canScheduleExactAlarms()
         upcoming.forEachIndexed { slot, reminder ->
             val millis = reminder.at.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-            val fire = pending(context, slot, reminder.key, reminder.title)
+            val fire = pending(context, slot, reminder.key, reminder.title, reminder.alert)
             if (exact) {
                 val show = PendingIntent.getActivity(context, 0, Intent(context, MainActivity::class.java),
                     PendingIntent.FLAG_IMMUTABLE)
@@ -40,11 +41,12 @@ object AlarmScheduler {
         }
     }
 
-    private fun pending(context: Context, slot: Int, key: String?, title: String?): PendingIntent {
+    private fun pending(context: Context, slot: Int, key: String?, title: String?, alert: Alert?): PendingIntent {
         val intent = Intent(context, ReminderReceiver::class.java)
             .setAction("app.kasane.REMIND.$slot")
             .putExtra(ReminderReceiver.EXTRA_KEY, key)
             .putExtra(ReminderReceiver.EXTRA_TITLE, title)
+            .putExtra(ReminderReceiver.EXTRA_ALERT, alert?.name)
         return PendingIntent.getBroadcast(context, slot, intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
     }

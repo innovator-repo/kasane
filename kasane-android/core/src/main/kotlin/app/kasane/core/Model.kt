@@ -24,6 +24,19 @@ enum class Kind {
 @Serializable
 enum class Block { MORNING, DAY, NIGHT, ALL_DAY }
 
+/** How strongly a reminder gets your attention, like Samsung Reminder's alert levels. */
+@Serializable
+enum class Alert {
+    /** A short buzz, no sound. */
+    LIGHT,
+
+    /** The notification sound and a buzz. */
+    MEDIUM,
+
+    /** The alarm sound, ringing until the reminder is opened or swiped away. */
+    STRONG,
+}
+
 /** Which days an item is due. */
 @Serializable
 enum class Days {
@@ -57,6 +70,8 @@ data class Item(
     val isRelapse: Boolean = false,
     /** Chosen days of the week, 1 = Monday to 7 = Sunday. When set, used instead of `days`. */
     val weekdays: List<Int> = emptyList(),
+    /** How the reminder sounds. */
+    val alert: Alert = Alert.MEDIUM,
 ) {
     fun dueOn(date: LocalDate): Boolean =
         !paused && if (weekdays.isEmpty()) days.includes(date) else date.dayOfWeek.value in weekdays
@@ -85,6 +100,8 @@ data class Task(
     val repeat: List<Int> = emptyList(),
     /** For a repeating task, the ISO date of the latest occurrence ticked off. */
     val doneThrough: String? = null,
+    /** How the reminder sounds. */
+    val alert: Alert = Alert.MEDIUM,
 ) {
     val repeats: Boolean get() = repeat.isNotEmpty()
 
