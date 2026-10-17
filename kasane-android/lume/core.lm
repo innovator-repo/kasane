@@ -1,0 +1,64 @@
+# Kasane core, in Lume. Compiled to liblumecore.so for Android.
+#
+# Fixed shapes, because compiled Lume needs every dimension known:
+#   H = 40 habits, D = 366 days, P = 53 periods (weeks or months, padded).
+# Kotlin fills the inputs; unused habits and days are zero rows and columns.
+
+# One day of Keel momentum for every habit at once:
+#   m' = min(1, m * decay + delta)   on a scheduled day
+#   m' = m                           on a day the habit is not scheduled
+# decay is e^-0.08 for an ordinary day, e^-0.015 for a grace day.
+# delta is 0 (missed), 0.08 (floor), 0.18 (target) or 0.28 (stretch).
+fn momentum_step(m: tensor[f32, (1, 40)],
+                 decay: tensor[f32, (1, 40)],
+                 delta: tensor[f32, (1, 40)],
+                 sched: tensor[f32, (1, 40)]) -> tensor[f32, (1, 40)] {
+    let grown = m * decay + delta
+    let capped = 1.0 - (1.0 - grown).relu()
+    return sched * capped + (1.0 - sched) * m
+}
+
+# Completion rate per period and habit.
+#   group: (P, D), 1 where day d belongs to period p
+#   done:  (D, H), 1 where the habit was done that day
+#   sched: (D, H), 1 where the habit was due that day
+# A period with nothing due gets 0, not a division by zero.
+fn period_rates(group: tensor[f32, (53, 366)],
+                done: tensor[f32, (366, 40)],
+                sched: tensor[f32, (366, 40)]) -> tensor[f32, (53, 40)] {
+    let hits = group @ done
+    let due = group @ sched
+    return hits / (due + 0.000001)
+}
+
+# How much each habit's outcome on one day moves the chance of a slip on
+# another day (lead: missing it yesterday before a slip today; knock-on:
+# slip yesterday, then this habit today). The caller lines the days up:
+#   miss:  (D, H), 1 where the habit was due and missed on the "cause" day
+#   kept:  (D, H), 1 where the habit was due and done on the "cause" day
+#   slip:  (D, 1), 1 where the "effect" day had a slip
+# Returns, per habit, P(slip | missed) - P(slip | done), in -1..1.
+fn slip_lift(miss: tensor[f32, (366, 40)],
+             kept: tensor[f32, (366, 40)],
+             slip: tensor[f32, (366, 1)]) -> tensor[f32, (40, 1)] {
+    let ones_d = ones(366, 1)
+    let slip_missed = miss.T @ slip
+    let n_missed = miss.T @ ones_d
+    let slip_kept = kept.T @ slip
+    let n_kept = kept.T @ ones_d
+    return slip_missed / (n_missed + 0.000001) - slip_kept / (n_kept + 0.000001)
+}
+
+fn main() {
+    # A self-check the interpreter, native and wasm runners must agree on.
+    var m = zeros(1, 40)
+    let decay = ones(1, 40) * exp(0.0 - 0.08)
+    let delta = ones(1, 40) * 0.18
+    let sched = ones(1, 40)
+    for day in range(30) {
+        m = momentum_step(m, decay, delta, sched)
+    }
+    print("momentum after 30 target days:", m[0][0])
+    let missed = momentum_step(m, decay, zeros(1, 40), sched)
+    print("after one missed day:", missed[0][0])
+}

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Kasane</string>
+    <string name="channel_reminders">Reminders</string>
+    <string name="reminder_text">Due now. Tap to open Kasane.</string>
+
+    <string name="tab_today">Today</string>
+    <string name="tab_momentum">Momentum</string>
+    <string name="tab_week">Week</string>
+    <string name="tab_tasks">Tasks</string>
+
+    <string name="today_progress">%1$d of %2$d done</string>
+    <string name="block_morning">Morning</string>
+    <string name="block_day">Day</string>
+    <string name="block_night">Night</string>
+    <string name="block_rules">Rules for today</string>
+    <string name="count_of">%1$d of %2$d</string>
+    <string name="minutes_of">%1$d of %2$d min</string>
+    <string name="rule_kept">Kept so far</string>
+    <string name="rule_slipped">Slipped today</string>
+    <string name="rule_mark_slip">I slipped</string>
+    <string name="rule_undo">Undo</string>
+    <string name="open">Open</string>
+
+    <string name="setup_title">Make reminders arrive on time</string>
+    <string name="setup_notifications">Kasane needs permission to show reminders.</string>
+    <string name="setup_alarms">Allow alarms and reminders, so each reminder fires at its exact time.</string>
+    <string name="setup_battery">Let Kasane run unrestricted. Samsung puts apps to sleep and delays their reminders otherwise. Also add Kasane to Never sleeping apps in Settings, Battery, Background usage limits.</string>
+    <string name="setup_allow">Allow</string>
+    <string name="setup_open_settings">Open settings</string>
+
+    <string name="momentum_explain">A missed day costs about 8% of a habit\'s momentum, never all of it. Showing up at all adds to it.</string>
+    <string name="momentum_overall">Overall %1$d%%</string>
+    <string name="engine_lume">Calculated by the Lume core</string>
+    <string name="engine_kotlin">Calculated in Kotlin (Lume core not loaded)</string>
+
+    <string name="week_before_slip">Missed the day before a slip</string>
+    <string name="week_before_slip_line">%1$s: slips are %2$d points more likely the day after you miss it</string>
+    <string name="week_after_slip">Knocked over after a slip</string>
+    <string name="week_after_slip_line">%1$s: %2$d points more often missed the day after a slip</string>
+    <string name="week_last_8">Last 8 weeks</string>
+    <string name="week_not_enough">Not enough days yet. This fills in after a couple of weeks of logging.</string>
+    <string name="loading">Working it out…</string>
+
+    <string name="tasks_empty">No tasks coming up. Add exams and one-off things here.</string>
+    <string name="tasks_add">Add task</string>
+    <string name="tasks_what">What</string>
+    <string name="tasks_remind_at">Remind at %1$s</string>
+    <string name="tasks_no_reminder">No reminder</string>
+    <string name="tasks_clear">Clear</string>
+    <string name="tasks_in_lock">That time is inside the 22:00 to 08:00 sleep lock, so the reminder will be skipped.</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+</resources>
