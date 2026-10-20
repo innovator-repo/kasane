@@ -179,3 +179,69 @@ class LumeTest {
         assertTrue(ExceptionGate.canDeclare(LocalTime.of(23, 45), now - ExceptionGate.COOLING_MILLIS, now))
     }
 }
+
+class SleepLockPolicyTest {
+    private val t0 = LocalDateTime.of(2026, 3, 18, 10, 0)
+    private val base = SleepLockState() // 22:00-08:00, on
+    private fun lock(sh: Int, eh: Int) = SleepLock(sh * 60, eh * 60)
+
+    @Test fun validatesRanges() {
+        assertTrue(SleepLockPolicy.valid(0, 0, 23, 59))
+        assertFalse(SleepLockPolicy.valid(24, 0, 8, 0))
+        assertFalse(SleepLockPolicy.valid(22, 60, 8, 0))
+        assertFalse(SleepLockPolicy.valid(22, 0, -1, 0))
+    }
+
+    @Test fun tighteningAppliesAtOnce() {
+        val (s, o) = SleepLockPolicy.request(base, lock(21, 9), true, t0)
+        assertEquals(LockOutcome.APPLIED, o)
+        assertEquals(lock(21, 9), s.lock)
+    }
+
+    @Test fun looseningWaitsAndRepeatDoesNotRestartTheTimer() {
+        val (s1, o1) = SleepLockPolicy.request(base, lock(23, 7), true, t0)
+        assertEquals(LockOutcome.PENDING, o1)
+        assertEquals(base.lock, s1.lock)
+        val (s2, o2) = SleepLockPolicy.request(s1, lock(23, 7), true, t0.plusHours(5))
+        assertEquals(LockOutcome.ALREADY_PENDING, o2)
+        assertEquals(t0, s2.pending?.requestedAt)
+    }
+
+    @Test fun turningOffIsALooseningAndTurningOnIsImmediate() {
+        val (off, o) = SleepLockPolicy.request(base, base.lock, false, t0)
+        assertEquals(LockOutcome.PENDING, o)
+        assertTrue(off.on)
+        val offNow = base.copy(on = false)
+        val (on, o2) = SleepLockPolicy.request(offNow, base.lock, true, t0)
+        assertEquals(LockOutcome.APPLIED, o2)
+        assertTrue(on.on)
+    }
+
+    @Test fun sealedLockRefuses() {
+        val (s, o) = SleepLockPolicy.request(base.copy(sealed = true), lock(21, 9), true, t0)
+        assertEquals(LockOutcome.REFUSED_SEALED, o)
+        assertEquals(base.lock, s.lock)
+    }
+
+    @Test fun sameAsCurrentIsUnchanged() {
+        assertEquals(LockOutcome.UNCHANGED, SleepLockPolicy.request(base, base.lock, true, t0).second)
+    }
+
+    @Test fun confirmsOnlyAfterCoolingAndInDaylight() {
+        val (pending, _) = SleepLockPolicy.request(base, lock(23, 7), true, t0)
+        assertFalse(SleepLockPolicy.confirmDue(pending, t0.plusHours(23)).second)
+        assertFalse(SleepLockPolicy.confirmDue(pending, t0.plusHours(24).withHour(21)).second)
+        val (done, ok) = SleepLockPolicy.confirmDue(pending, t0.plusHours(25))
+        assertTrue(ok)
+        assertEquals(lock(23, 7), done.lock)
+        assertNull(done.pending)
+    }
+
+    @Test fun surfaceStaysSanctuaryUntilEightOnlyWhileTheLockIsOn() {
+        val seven = LocalTime.of(7, 0)
+        assertEquals(Phase.SANCTUARY, Phase.surfaceOf(seven, SleepLock()))
+        assertEquals(Phase.MORNING, Phase.surfaceOf(seven, null))
+        assertEquals(Phase.MORNING, Phase.of(seven))
+        assertEquals(Phase.MORNING, Phase.surfaceOf(LocalTime.of(8, 0), SleepLock()))
+    }
+}

@@ -24,6 +24,13 @@ enum class Phase {
     }
 
     companion object {
+        /**
+         * The surface to draw. Activity prompts follow [of], so Morning starts at 06:00, but while the
+         * sleep lock holds (22:00-08:00 by default) the surface stays Sanctuary. With the lock off, it is [of].
+         */
+        fun surfaceOf(time: LocalTime, lock: SleepLock?): Phase =
+            if (lock != null && lock.isLocked(time)) SANCTUARY else of(time)
+
         fun of(time: LocalTime): Phase {
             val minute = time.hour * 60 + time.minute
             return when {

@@ -11,6 +11,7 @@ class ReminderReceiver : BroadcastReceiver() {
         val key = intent.getStringExtra(EXTRA_KEY) ?: return
         val title = intent.getStringExtra(EXTRA_TITLE) ?: return
         val alert = intent.getStringExtra(EXTRA_ALERT)?.let { runCatching { Alert.valueOf(it) }.getOrNull() } ?: Alert.MEDIUM
+        app.kasane.ipc.SleepLockStore.confirmDue(context)
         Notifier.show(context, key, title, alert)
         AlarmScheduler.rearm(context)
         Widgets.refresh(context)

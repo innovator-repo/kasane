@@ -8,6 +8,8 @@ import android.os.Build
 import app.kasane.MainActivity
 import app.kasane.core.Alert
 import app.kasane.core.Reminders
+import app.kasane.core.SleepLock
+import app.kasane.ipc.SleepLockStore
 import app.kasane.store
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -24,7 +26,8 @@ object AlarmScheduler {
 
     fun rearm(context: Context) {
         val alarms = context.getSystemService(AlarmManager::class.java)
-        val upcoming = Reminders.upcoming(context.store.journal.value, LocalDateTime.now()).take(SLOTS)
+        val upcoming = Reminders.upcoming(context.store.journal.value, LocalDateTime.now(),
+            SleepLockStore.active(context) ?: SleepLock(0, 0)).take(SLOTS)
         for (slot in 0 until SLOTS) alarms.cancel(pending(context, slot, null, null, null))
         val exact = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarms.canScheduleExactAlarms()
         upcoming.forEachIndexed { slot, reminder ->

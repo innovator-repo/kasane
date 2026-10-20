@@ -31,7 +31,8 @@ class KasaneStatusProvider : ContentProvider() {
             .average().takeIf { !it.isNaN() }?.times(100)?.roundToInt() ?: 0
         val rules = journal.items.filter { it.kind == Kind.RULE && it.dueOn(today) }
         val kept = rules.count { it.finishedFor(journal.entry(today, it.id)) }
-        val block = if (Phase.of(LocalTime.now()) == Phase.SANCTUARY) "SLEEP_LOCK" else Phase.of(LocalTime.now()).block.name
+        val block = if (Phase.surfaceOf(LocalTime.now(), SleepLockStore.active(context)) == Phase.SANCTUARY) "SLEEP_LOCK"
+        else Phase.of(LocalTime.now()).block.name
         return MatrixCursor(arrayOf("momentum", "block", "rulesKept", "rulesTotal")).apply {
             addRow(arrayOf<Any>(momentum.coerceIn(0, 100), block, kept, rules.size))
         }

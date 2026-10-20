@@ -16,6 +16,7 @@ class KasaneApp : Application() {
         super.onCreate()
         store = Store(this)
         createReminderChannels()
+        app.kasane.ipc.SleepLockStore.confirmDue(this)
         AlarmScheduler.rearm(this)
     }
 

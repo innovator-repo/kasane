@@ -77,6 +77,12 @@
                 <action android:name="app.lume.action.RULE_EVENT" />
             </intent-filter>
         </receiver>
+        <receiver android:name=".ipc.SleepLockSyncReceiver" android:exported="true"
+            android:permission="app.lume.permission.ECOSYSTEM_SYNC">
+            <intent-filter>
+                <action android:name="app.lume.action.SLEEP_LOCK_SYNC" />
+            </intent-filter>
+        </receiver>
         <provider android:name=".ipc.KasaneStatusProvider" android:authorities="app.kasane.provider"
             android:exported="true" android:readPermission="app.lume.permission.ECOSYSTEM_SYNC" />
 

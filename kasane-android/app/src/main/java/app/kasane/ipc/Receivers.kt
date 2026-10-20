@@ -66,3 +66,20 @@ class RuleEventReceiver : BroadcastReceiver() {
         }
     }
 }
+
+/**
+ * Vow's sleep lock changed. The values are checked and put through the same rules as a local edit:
+ * tightening applies at once, loosening waits out its 24 hours, a sealed lock refuses. Not echoed back.
+ */
+class SleepLockSyncReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        if (intent.action != SleepLockStore.ACTION_SYNC || !intent.hasExtra("on")) return
+        SleepLockStore.applyRemote(
+            context,
+            intent.getIntExtra("startHour", -1), intent.getIntExtra("startMinute", -1),
+            intent.getIntExtra("endHour", -1), intent.getIntExtra("endMinute", -1),
+            intent.getBooleanExtra("on", true),
+        )
+        app.kasane.reminders.AlarmScheduler.rearm(context)
+    }
+}
