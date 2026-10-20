@@ -53,7 +53,9 @@ class Analysis(private val journal: Journal, private val today: LocalDate, priva
         ?.let { ChronoUnit.DAYS.between(firstDay, it).toInt().coerceIn(0, d - 1) }
         ?: (d - 1)
 
-    private fun due(item: Item, index: Int): Boolean = index >= startIndex && item.dueOn(day(index))
+    /** A planned exception is not scheduled: it freezes momentum and leaves the slip matrix alone. */
+    private fun due(item: Item, index: Int): Boolean = index >= startIndex && item.dueOn(day(index)) &&
+        journal.entry(day(index), item.id).exception != ExceptionState.PLANNED
 
     private fun tier(item: Item, index: Int): Int = Tier.of(item, journal.entry(day(index), item.id))
 

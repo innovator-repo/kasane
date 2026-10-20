@@ -76,17 +76,45 @@ data class Item(
     fun dueOn(date: LocalDate): Boolean =
         !paused && if (weekdays.isEmpty()) days.includes(date) else date.dayOfWeek.value in weekdays
 
+    /** Reps or minutes that keep the habit alive on a low-energy day: 20% of the target, at least 1. */
+    val floorTarget: Int get() = if (target <= 0) 0 else maxOf(1, (target * FLOOR_SHARE + 0.999).toInt())
+
+    /** The amount logged for COUNT and TIMED items. */
+    fun amount(entry: Entry): Int = when (kind) {
+        Kind.COUNT -> entry.count
+        Kind.TIMED -> entry.minutes
+        else -> 0
+    }
+
     /**
      * Finished for the day, so Today hides it. A rule counts once it is marked kept;
-     * a slipped rule stays visible so the slip can be undone.
+     * a slipped rule stays visible so the slip can be undone. A planned exception counts as kept.
+     * On a Floor Mode day, or once the floor is parked, a COUNT or TIMED item is finished at its floor.
      */
-    fun finishedFor(entry: Entry): Boolean = when (kind) {
-        Kind.CHECK -> entry.done
-        Kind.RULE -> entry.done && !entry.slipped
-        Kind.COUNT -> target > 0 && entry.count >= target
-        Kind.TIMED -> target > 0 && entry.minutes >= target
+    fun finishedFor(entry: Entry, floorMode: Boolean = false): Boolean {
+        if (entry.exception == ExceptionState.PLANNED) return true
+        return when (kind) {
+            Kind.CHECK -> entry.done
+            Kind.RULE -> entry.done && !entry.slipped
+            Kind.COUNT, Kind.TIMED -> {
+                val value = amount(entry)
+                target > 0 && (value >= target || ((floorMode || entry.floorParked) && value >= floorTarget))
+            }
+        }
+    }
+
+    /** At the floor but short of the target: momentum is protected, the full goal is still open. */
+    fun floorKept(entry: Entry): Boolean =
+        (kind == Kind.COUNT || kind == Kind.TIMED) && target > 0 && amount(entry) in floorTarget until target
+
+    companion object {
+        const val FLOOR_SHARE = 0.2
     }
 }
+
+/** Whether a rule was set aside on purpose, planned in a calm moment, rather than slipped. */
+@Serializable
+enum class ExceptionState { NONE, PLANNED }
 
 /** What was logged for one item on one day. */
 @Serializable
@@ -95,7 +123,17 @@ data class Entry(
     val count: Int = 0,
     val minutes: Int = 0,
     val slipped: Boolean = false,
-)
+    /** A planned exception counts as done, never as a slip, and leaves momentum untouched. */
+    val exception: ExceptionState = ExceptionState.NONE,
+    /** The floor was accepted for today, so the item rests in the completed tray. */
+    val floorParked: Boolean = false,
+    /** Minutes after midnight when the item was first finished today, for the notification anchors. */
+    val doneAt: Int? = null,
+) {
+    companion object {
+        fun planned(): Entry = Entry(done = true, slipped = false, exception = ExceptionState.PLANNED)
+    }
+}
 
 /** A task on a date, such as an exam, or one that repeats on chosen days of the week. */
 @Serializable

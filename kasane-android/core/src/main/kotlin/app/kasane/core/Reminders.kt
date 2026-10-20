@@ -15,8 +15,13 @@ object Reminders {
      */
     fun upcoming(journal: Journal, now: LocalDateTime, lock: SleepLock = SleepLock()): List<Reminder> {
         val out = mutableListOf<Reminder>()
+        val today = now.toLocalDate()
+        // Duolingo and Ren go out as one Japanese evening pass at Duolingo's time.
+        val ritual = journal.items.any { it.id == Orchestrator.DUOLINGO && it.remindAt != null } &&
+            Orchestrator.japanesePending(journal, today).size == 2
         for (item in journal.items) {
-            val minute = item.remindAt ?: continue
+            if (ritual && item.id == Orchestrator.REN) continue
+            val minute = Orchestrator.reminderMinute(item, journal, today) ?: continue
             val time = LocalTime.of(minute / 60, minute % 60)
             if (lock.isLocked(time)) continue
             for (offset in 0L..7L) {
@@ -45,6 +50,9 @@ object Reminders {
             val date = runCatching { LocalDate.parse(task.date) }.getOrNull() ?: continue
             val at = LocalDateTime.of(date, LocalTime.of(minute / 60, minute % 60))
             if (at.isAfter(now)) out.add(Reminder("task:${task.id}", task.title, at, task.alert))
+        }
+        for ((save, at) in Orchestrator.upcomingSaves(journal, now)) {
+            out.add(Reminder("save:${save.name}", save.name, at, Orchestrator.saveAlert(save)))
         }
         return out.sortedBy { it.at }
     }
