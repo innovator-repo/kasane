@@ -128,4 +128,8 @@
     <string name="today_show_completed">Show completed (%1$d)</string>
     <string name="today_hide_completed">Hide completed</string>
     <string name="rule_mark_kept">Kept</string>
+    <plurals name="widget_in_days">
+        <item quantity="one">In %d day</item>
+        <item quantity="other">In %d days</item>
+    </plurals>
 </resources>
