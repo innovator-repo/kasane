@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Only apps signed with the same key hold this, so only they can log into or read Kasane. -->
+    <permission android:name="app.lume.permission.ECOSYSTEM_SYNC" android:protectionLevel="signature" />
+    <uses-permission android:name="app.lume.permission.ECOSYSTEM_SYNC" />
+
+    <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
@@ -9,6 +14,9 @@
     <!-- Lets the shortcuts check whether Ren and Duolingo are installed. -->
     <queries>
         <package android:name="app.ren.japanese" />
+        <package android:name="app.katachi" />
+        <package android:name="com.vow.app" />
+        <package android:name="com.sigil.app" />
         <package android:name="com.duolingo" />
         <package android:name="com.android.chrome" />
     </queries>
@@ -44,12 +52,35 @@
                 <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
             </intent-filter>
         </receiver>
-        <!-- Katachi sends how many of the day's puzzles are solved. -->
-        <receiver android:name=".PuzzleCountReceiver" android:exported="true">
+        <!-- The other Lume apps report in. Each entry point needs the signature permission. -->
+        <receiver android:name=".PuzzleCountReceiver" android:exported="true"
+            android:permission="app.lume.permission.ECOSYSTEM_SYNC">
             <intent-filter>
                 <action android:name="app.kasane.action.LOG_COUNT" />
             </intent-filter>
         </receiver>
+        <receiver android:name=".ipc.LogCheckReceiver" android:exported="true"
+            android:permission="app.lume.permission.ECOSYSTEM_SYNC">
+            <intent-filter>
+                <action android:name="app.kasane.action.LOG_CHECK" />
+            </intent-filter>
+        </receiver>
+        <receiver android:name=".ipc.EcoMetricsReceiver" android:exported="true"
+            android:permission="app.lume.permission.ECOSYSTEM_SYNC">
+            <intent-filter>
+                <action android:name="app.kasane.action.ECO_METRICS" />
+            </intent-filter>
+        </receiver>
+        <receiver android:name=".ipc.RuleEventReceiver" android:exported="true"
+            android:permission="app.lume.permission.ECOSYSTEM_SYNC">
+            <intent-filter>
+                <action android:name="app.lume.action.RULE_EVENT" />
+            </intent-filter>
+        </receiver>
+        <provider android:name=".ipc.KasaneStatusProvider" android:authorities="app.kasane.provider"
+            android:exported="true" android:readPermission="app.lume.permission.ECOSYSTEM_SYNC" />
+
+        <receiver android:name=".reminders.NotificationActionReceiver" android:exported="false" />
 
         <receiver android:name=".widget.TodayWidgetReceiver" android:exported="true"
             android:label="@string/widget_today_name">
@@ -73,6 +104,14 @@
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/all_widget_info" />
+        </receiver>
+
+        <receiver android:name=".widget.HorizonWidgetReceiver" android:exported="true"
+            android:label="@string/widget_horizon_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/horizon_widget_info" />
         </receiver>
     </application>
 </manifest>
