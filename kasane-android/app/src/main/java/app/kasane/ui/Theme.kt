@@ -3,60 +3,36 @@ package app.kasane.ui
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import app.kasane.core.Phase
+import app.kasane.designsystem.LocalLumeColors
+import app.kasane.designsystem.LocalLumeHaptics
+import app.kasane.designsystem.LumeHaptics
+import app.kasane.designsystem.LumeType
+import app.kasane.designsystem.lumeColors
+import app.kasane.designsystem.toColorScheme
+import kotlinx.coroutines.delay
+import java.time.LocalTime
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import app.kasane.R
 
-/** Geist, the same family as Ren, so the apps read as one set. */
-val Geist = FontFamily(
-    Font(R.font.geist_regular, FontWeight.Normal),
-    Font(R.font.geist_medium, FontWeight.Medium),
-    Font(R.font.geist_semibold, FontWeight.SemiBold),
-)
+/** Kept for the widgets and older callers; the voices live in [LumeType]. */
+val Geist = LumeType.Geist
 
-/** Indigo for momentum, the colour of layered ink. */
-private val Ink = Color(0xFF3D4FB8)
-private val InkLight = Color(0xFFAAB6FF)
-
-internal val Light = lightColorScheme(
-    primary = Ink,
-    onPrimary = Color.White,
-    primaryContainer = Color(0xFFE4E8FF),
-    onPrimaryContainer = Color(0xFF14205E),
-    background = Color(0xFFFFFFFF),
-    onBackground = Color(0xFF15161A),
-    surface = Color(0xFFFFFFFF),
-    onSurface = Color(0xFF15161A),
-    surfaceVariant = Color(0xFFF2F3F6),
-    onSurfaceVariant = Color(0xFF5B5F6B),
-    outline = Color(0xFFD9DBE1),
-    error = Color(0xFFB3261E),
-)
-
-internal val Dark = darkColorScheme(
-    primary = InkLight,
-    onPrimary = Color(0xFF0E1652),
-    primaryContainer = Color(0xFF26316F),
-    onPrimaryContainer = Color(0xFFE4E8FF),
-    background = Color(0xFF0F1013),
-    onBackground = Color(0xFFE8E9ED),
-    surface = Color(0xFF0F1013),
-    onSurface = Color(0xFFE8E9ED),
-    surfaceVariant = Color(0xFF1C1E23),
-    onSurfaceVariant = Color(0xFFA3A7B3),
-    outline = Color(0xFF2E3138),
-    error = Color(0xFFF2B8B5),
-)
+/** The static schemes the home screen widgets use, which have no clock to follow. */
+internal val Light = lumeColors(Phase.DAY, false).toColorScheme()
+internal val Dark = lumeColors(Phase.DAY, true).toColorScheme()
 
 private fun style(size: Int, weight: FontWeight = FontWeight.Normal) =
-    TextStyle(fontFamily = Geist, fontWeight = weight, fontSize = size.sp)
+    TextStyle(fontFamily = LumeType.Geist, fontWeight = weight, fontSize = size.sp)
 
 private val Type = Typography(
     headlineMedium = style(28, FontWeight.SemiBold),
@@ -72,5 +48,23 @@ private val Type = Typography(
 
 @Composable
 fun KasaneTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = if (isSystemInDarkTheme()) Dark else Light, typography = Type, content = content)
+    val phase by rememberPhase()
+    val colors = lumeColors(phase, isSystemInDarkTheme())
+    val context = LocalContext.current
+    CompositionLocalProvider(LocalLumeColors provides colors, LocalLumeHaptics provides LumeHaptics.get(context)) {
+        MaterialTheme(colorScheme = colors.toColorScheme(), typography = Type, content = content)
+    }
+}
+
+/** The phase of the day, re-read every minute so the surface shifts while the app is open. */
+@Composable
+private fun rememberPhase(): State<Phase> {
+    val phase = remember { mutableStateOf(Phase.of(LocalTime.now())) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(60_000)
+            phase.value = Phase.of(LocalTime.now())
+        }
+    }
+    return phase
 }
