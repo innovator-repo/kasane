@@ -1,7 +1,8 @@
 package app.kasane.core
 
 /**
- * The starting list, taken from the routines in Samsung Reminders and the
+ * A reference list of routines, never added to a journal automatically: a new
+ * install starts empty. The starting list, taken from the routines in Samsung Reminders and the
  * Habits app. Reminder times avoid the 22:00-08:00 sleep lock.
  */
 object Catalog {

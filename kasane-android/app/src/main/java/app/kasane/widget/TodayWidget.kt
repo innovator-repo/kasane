@@ -88,7 +88,7 @@ private fun TodayContent(journal: Journal) {
     WidgetCard(tab = 0) {
         Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(today.format(DateTimeFormatter.ofPattern("EEE d MMM")), style = labelStyle(), modifier = GlanceModifier.defaultWeight())
-            AddTaskButton()
+            AddButton()
         }
         Text(context.getString(R.string.today_progress, done, due.size), style = headlineStyle(if (roomy) 22 else 18))
         Spacer(GlanceModifier.height(6.dp))

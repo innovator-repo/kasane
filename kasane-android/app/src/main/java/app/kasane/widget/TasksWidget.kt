@@ -62,7 +62,7 @@ private fun TasksContent(tasks: List<Task>) {
     WidgetCard(tab = 3) {
         Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(context.getString(R.string.widget_tasks_name), style = headlineStyle(18), modifier = GlanceModifier.defaultWeight())
-            AddTaskButton()
+            AddButton()
         }
         Spacer(GlanceModifier.height(8.dp))
         if (open.isEmpty()) {

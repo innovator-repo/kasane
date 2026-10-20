@@ -45,13 +45,13 @@ internal fun WidgetCard(tab: Int, content: @Composable ColumnScope.() -> Unit) {
     )
 }
 
-/** A small "+ Task" button that opens the app's add-task form. */
+/** A small "+ Add" button that opens the app's habit / task / rule chooser. */
 @Composable
-internal fun AddTaskButton() {
+internal fun AddButton() {
     val context = LocalContext.current
     val add = Intent(context, MainActivity::class.java)
-        .putExtra(MainActivity.EXTRA_TAB, 3)
-        .putExtra(MainActivity.EXTRA_ADD_TASK, true)
+        .setAction(MainActivity.ACTION_ADD_FROM_WIDGET)
+        .putExtra(MainActivity.EXTRA_PROMPT_ADD_TYPE, true)
         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
     Box(
         GlanceModifier.background(GlanceTheme.colors.primaryContainer).cornerRadius(14.dp)

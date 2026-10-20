@@ -50,7 +50,7 @@ private fun AllContent(journal: Journal) {
         Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(context.getString(R.string.today_progress, done, due.size), style = headlineStyle(18),
                 modifier = GlanceModifier.defaultWeight())
-            AddTaskButton()
+            AddButton()
         }
         Spacer(GlanceModifier.height(6.dp))
         LazyColumn(GlanceModifier.fillMaxSize()) {

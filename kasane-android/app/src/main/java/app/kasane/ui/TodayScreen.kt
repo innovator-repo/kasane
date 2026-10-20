@@ -27,6 +27,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.Surface
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.draw.clip
+import androidx.compose.material3.ExperimentalMaterial3Api
+import app.kasane.core.Task
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -52,35 +59,58 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
+/** Which kind of item the chips on Today show. */
+private enum class Filter(val label: Int) {
+    ALL(R.string.filter_all), HABITS(R.string.add_type_habit), TASKS(R.string.today_tasks), RULES(R.string.add_type_rule)
+}
+
 @Composable
-fun TodayScreen(modifier: Modifier = Modifier) {
+fun TodayScreen(modifier: Modifier = Modifier, onAdd: () -> Unit = {}) {
     val context = LocalContext.current
     val store = context.store
     val journal by store.journal.collectAsStateWithLifecycle()
     val today = remember(journal) { LocalDate.now() }
+    val tomorrow = today.plusDays(1)
     val due = journal.items.filter { it.dueOn(today) }
-    val counted = due.count { Tier.of(it, journal.entry(today, it.id)) >= Tier.TARGET }
+    val counted = due.count { it.finishedFor(journal.entry(today, it.id)) }
     val order = blockOrder(LocalTime.now())
 
-    var adding by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<Item?>(null) }
     var removing by remember { mutableStateOf<Item?>(null) }
+    var filter by remember { mutableStateOf(Filter.ALL) }
+    var showCompleted by remember { mutableStateOf(false) }
+
+    // Finished items leave Today at once; "Show completed" brings them back to undo.
+    val pending = due.filter { !it.finishedFor(journal.entry(today, it.id)) }
+    val finished = due - pending.toSet()
+    val tasksToday = journal.tasks.filter { it.dueOn(today) && !it.doneOn(today) }
+    val tomorrowItems = journal.items.filter { it.dueOn(tomorrow) }
+    val tomorrowTasks = journal.tasks.filter {
+        if (it.repeats) it.dueOn(tomorrow) else it.open && it.date == tomorrow.toString()
+    }
+    val showHabits = filter == Filter.ALL || filter == Filter.HABITS
+    val showRules = filter == Filter.ALL || filter == Filter.RULES
+    val showTasks = filter == Filter.ALL || filter == Filter.TASKS
+    fun visible(item: Item) = if (item.kind == Kind.RULE) showRules else showHabits
 
     Box(modifier.fillMaxSize()) {
         LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 96.dp)) {
-            item {
-                Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 8.dp)) {
-                    Text(today.format(DateTimeFormatter.ofPattern("EEEE, d MMMM")),
-                        style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(stringResource(R.string.today_progress, counted, due.size),
-                        style = MaterialTheme.typography.headlineMedium)
-                    Text(stringResource(R.string.habit_hint), style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+            item { ProgressCard(today, counted, due.size, tasksToday.size) }
+            item { SetupCard() }
+            item { FilterChips(filter) { filter = it } }
+            if (journal.items.isEmpty() && journal.tasks.isEmpty()) {
+                item { EmptyNote(R.string.today_nothing, R.string.today_nothing_hint) }
+            } else if (pending.isEmpty() && tasksToday.isEmpty() && due.isNotEmpty() && filter == Filter.ALL) {
+                item { EmptyNote(R.string.today_all_done, R.string.habit_hint) }
+            }
+            if (showTasks && tasksToday.isNotEmpty()) {
+                item(key = "h-tasks") { SectionLabel(stringResource(R.string.today_tasks)) }
+                items(tasksToday, key = { "t-" + it.id }) { task ->
+                    TaskRow(task) { store.setTaskDone(task.id, true) }
                 }
             }
-            item { SetupCard() }
             for (block in order) {
-                val items = due.filter { it.block == block }
+                val items = pending.filter { it.block == block && visible(it) }
                 if (items.isEmpty()) continue
                 item(key = "h-$block") { SectionLabel(blockLabel(block)) }
                 items(items, key = { it.id }) { item ->
@@ -89,14 +119,33 @@ fun TodayScreen(modifier: Modifier = Modifier) {
                     }
                 }
             }
+            val doneShown = finished.filter { visible(it) }
+            if (doneShown.isNotEmpty()) {
+                item(key = "toggle-completed") {
+                    TextButton(onClick = { showCompleted = !showCompleted }, modifier = Modifier.padding(start = 8.dp, top = 8.dp)) {
+                        Text(if (showCompleted) stringResource(R.string.today_hide_completed)
+                        else stringResource(R.string.today_show_completed, doneShown.size))
+                    }
+                }
+                if (showCompleted) items(doneShown, key = { "d-" + it.id }) { item ->
+                    ItemRow(item, journal.entry(today, item.id), onRemove = { editing = item }) {
+                        store.setEntry(today, item.id, it)
+                    }
+                }
+            }
+            val nextItems = tomorrowItems.filter { visible(it) }
+            val nextTasks = if (showTasks) tomorrowTasks else emptyList()
+            if (nextItems.isNotEmpty() || nextTasks.isNotEmpty()) {
+                item(key = "h-tomorrow") { SectionLabel(stringResource(R.string.today_tomorrow)) }
+                items(nextTasks, key = { "nt-" + it.id }) { UpcomingRow(it.title, R.string.add_badge_task, it.remindAt) }
+                items(nextItems, key = { "ni-" + it.id }) { item ->
+                    UpcomingRow(item.title, if (item.kind == Kind.RULE) R.string.add_badge_rule else R.string.add_badge_habit, item.remindAt)
+                }
+            }
         }
-        FloatingActionButton(onClick = { adding = true }, modifier = Modifier.align(Alignment.BottomEnd).padding(20.dp)) {
+        FloatingActionButton(onClick = onAdd, modifier = Modifier.align(Alignment.BottomEnd).padding(20.dp)) {
             Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.habit_add))
         }
-    }
-    if (adding) AddHabitDialog(onDismiss = { adding = false }) { item ->
-        store.addItem(item)
-        adding = false
     }
     editing?.let { item ->
         AddHabitDialog(onDismiss = { editing = null }, existing = item,
@@ -115,6 +164,84 @@ fun TodayScreen(modifier: Modifier = Modifier) {
             },
             dismissButton = { TextButton(onClick = { removing = null }) { Text(stringResource(R.string.cancel)) } },
         )
+    }
+}
+
+@Composable
+private fun ProgressCard(today: LocalDate, counted: Int, total: Int, openTasks: Int) {
+    Surface(
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.primaryContainer,
+        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 8.dp),
+    ) {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(today.format(DateTimeFormatter.ofPattern("EEEE, d MMMM")).uppercase(),
+                style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f))
+            Text(stringResource(R.string.today_progress, counted, total), style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer)
+            LinearProgressIndicator(
+                progress = if (total == 0) 0f else counted.toFloat() / total,
+                modifier = Modifier.fillMaxWidth().padding(top = 6.dp).height(8.dp).clip(RoundedCornerShape(4.dp)),
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.15f),
+            )
+            if (openTasks > 0) {
+                Text(stringResource(if (openTasks == 1) R.string.today_task_open else R.string.today_tasks_open, openTasks),
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f))
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FilterChips(selected: Filter, onSelect: (Filter) -> Unit) {
+    Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Filter.entries.forEach {
+            FilterChip(selected = selected == it, onClick = { onSelect(it) }, label = { Text(stringResource(it.label)) })
+        }
+    }
+}
+
+@Composable
+private fun EmptyNote(title: Int, hint: Int) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 24.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(stringResource(title), style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+private fun TaskRow(task: Task, onDone: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 3.dp)
+            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(16.dp))
+            .padding(start = 4.dp, end = 12.dp, top = 4.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Checkbox(checked = false, onCheckedChange = { onDone() })
+        Column(Modifier.weight(1f)) {
+            Text(task.title, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            task.remindAt?.let { Detail("%02d:%02d".format(it / 60, it % 60)) }
+        }
+        KindBadge(stringResource(R.string.add_badge_task))
+    }
+}
+
+@Composable
+private fun UpcomingRow(title: String, badge: Int, remindAt: Int?) {
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 3.dp)
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f), RoundedCornerShape(16.dp))
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.bodyLarge, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            remindAt?.let { Detail("%02d:%02d".format(it / 60, it % 60)) }
+        }
+        KindBadge(stringResource(badge))
     }
 }
 
@@ -153,15 +280,15 @@ private fun ItemRow(item: Item, entry: Entry, onRemove: () -> Unit, onChange: (E
     Row(
         Modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 2.dp)
-            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
+            .padding(horizontal = 16.dp, vertical = 3.dp)
+            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(16.dp))
             // Long press takes an item off Today.
             .combinedClickable(onLongClick = onRemove) { if (item.kind == Kind.CHECK) onChange(entry.copy(done = !entry.done)) }
             .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
-            Text(item.title, style = MaterialTheme.typography.bodyLarge, maxLines = 2, overflow = TextOverflow.Ellipsis,
+            Text(item.title, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis,
                 color = if (counted && item.kind != Kind.RULE) MaterialTheme.colorScheme.onSurfaceVariant
                 else MaterialTheme.colorScheme.onSurface)
             when (item.kind) {
@@ -187,8 +314,17 @@ private fun ItemRow(item: Item, entry: Entry, onRemove: () -> Unit, onChange: (E
                 plus = { onChange(entry.copy(minutes = entry.minutes + 5)) },
                 plusLabel = "+5",
             )
-            Kind.RULE -> TextButton(onClick = { onChange(entry.copy(slipped = !entry.slipped)) }) {
-                Text(stringResource(if (entry.slipped) R.string.rule_undo else R.string.rule_mark_slip))
+            Kind.RULE -> Row(verticalAlignment = Alignment.CenterVertically) {
+                if (entry.done && !entry.slipped) {
+                    TextButton(onClick = { onChange(entry.copy(done = false)) }) { Text(stringResource(R.string.rule_undo)) }
+                } else {
+                    if (!entry.slipped) FilledTonalButton(onClick = { onChange(entry.copy(done = true)) }) {
+                        Text(stringResource(R.string.rule_mark_kept))
+                    }
+                    TextButton(onClick = { onChange(entry.copy(slipped = !entry.slipped, done = false)) }) {
+                        Text(stringResource(if (entry.slipped) R.string.rule_undo else R.string.rule_mark_slip))
+                    }
+                }
             }
         }
     }

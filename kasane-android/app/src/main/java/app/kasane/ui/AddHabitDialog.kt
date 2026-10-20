@@ -49,9 +49,16 @@ import java.util.UUID
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddHabitDialog(onDismiss: () -> Unit, existing: Item? = null, onRemove: () -> Unit = {}, onAdd: (Item) -> Unit) {
+fun AddHabitDialog(
+    onDismiss: () -> Unit,
+    existing: Item? = null,
+    onRemove: () -> Unit = {},
+    /** Kinds offered when adding; a rule from the type chooser passes just RULE. */
+    kinds: List<Kind> = listOf(Kind.CHECK, Kind.COUNT, Kind.TIMED, Kind.RULE),
+    onAdd: (Item) -> Unit,
+) {
     var title by remember { mutableStateOf(existing?.title ?: "") }
-    var kind by remember { mutableStateOf(existing?.kind ?: Kind.CHECK) }
+    var kind by remember { mutableStateOf(existing?.kind ?: kinds.first()) }
     var target by remember { mutableStateOf(existing?.target?.takeIf { it > 0 }?.toString() ?: "") }
     var block by remember { mutableStateOf(existing?.block?.takeIf { it != Block.ALL_DAY } ?: Block.DAY) }
     // Null means the days picked in `weekdays`.
@@ -76,7 +83,7 @@ fun AddHabitDialog(onDismiss: () -> Unit, existing: Item? = null, onRemove: () -
                 Label(stringResource(R.string.habit_kind))
                 Chips(listOf(Kind.CHECK to R.string.habit_kind_check, Kind.COUNT to R.string.habit_kind_count,
                     Kind.TIMED to R.string.habit_kind_timed, Kind.RULE to R.string.habit_kind_rule)
-                    .filter { existing == null || it.first == kind }, kind) { kind = it }
+                    .filter { if (existing == null) it.first in kinds else it.first == kind }, kind) { kind = it }
                 Text(stringResource(when (kind) {
                     Kind.CHECK -> R.string.habit_kind_check_hint
                     Kind.COUNT -> R.string.habit_kind_count_hint

@@ -141,7 +141,7 @@ class CoreTest {
 
     @Test fun remindersSkipDoneItemsAndTheLock() {
         val now = LocalDateTime.of(2026, 10, 16, 8, 0) // Friday
-        val journal = Journal().withEntry(now.toLocalDate(), "yoga", Entry(done = true))
+        val journal = Journal(items = Catalog.defaults).withEntry(now.toLocalDate(), "yoga", Entry(done = true))
         val reminders = Reminders.upcoming(journal, now)
         val yoga = reminders.first { it.key == "item:yoga" }
         assertEquals(LocalDateTime.of(2026, 10, 17, 8, 15), yoga.at) // tomorrow, today is done
@@ -160,11 +160,36 @@ class CoreTest {
         assertEquals(Alert.MEDIUM, old.tasks.single().alert)
     }
 
-    @Test fun codecRoundTripsAndAddsNewCatalogItems() {
+    @Test fun codecRoundTripsWithoutMergingTheCatalog() {
         val journal = Journal(items = Catalog.defaults.take(3)).withEntry(LocalDate.of(2026, 10, 16), "yoga", Entry(done = true))
         val back = Codec.decode(Codec.encode(journal))
-        assertEquals(Catalog.defaults.size, back.items.size)
+        assertEquals(3, back.items.size)
         assertTrue(back.entry(LocalDate.of(2026, 10, 16), "yoga").done)
+    }
+
+    @Test fun aNewJournalStartsEmpty() {
+        assertTrue(Journal().items.isEmpty())
+        assertTrue(Codec.decode("""{"tasks":[]}""").items.isEmpty())
+    }
+
+    @Test fun finishedItemsLeaveToday() {
+        val check = Item("c", "Read", Kind.CHECK, Block.DAY)
+        assertTrue(!check.finishedFor(Entry()) && check.finishedFor(Entry(done = true)))
+        val count = Item("n", "Squats", Kind.COUNT, Block.DAY, target = 10)
+        assertTrue(!count.finishedFor(Entry(count = 9)) && count.finishedFor(Entry(count = 10)))
+        val rule = Item("r", "No sweets", Kind.RULE, Block.ALL_DAY)
+        assertTrue(!rule.finishedFor(Entry()) && rule.finishedFor(Entry(done = true)))
+        assertTrue(!rule.finishedFor(Entry(done = true, slipped = true)))
+    }
+
+    @Test fun tasksAppearOnTheirOwnDayAndTomorrow() {
+        val today = LocalDate.of(2026, 10, 20)
+        val once = Task("a", "Exam", "2026-10-21")
+        assertTrue(!once.dueOn(today) && once.dueOn(today.plusDays(1)))
+        assertTrue(Task("b", "Late", "2026-10-18").dueOn(today))
+        assertTrue(!Task("c", "Done", "2026-10-20", done = true).dueOn(today))
+        val weekly = Task("d", "Gym", "2026-10-01", repeat = listOf(today.dayOfWeek.value))
+        assertTrue(weekly.dueOn(today) && !weekly.dueOn(today.plusDays(1)))
     }
 
     @Test fun missingDiaryBeforeSlipsShowsUpAsALead() {

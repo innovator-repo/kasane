@@ -75,6 +75,17 @@ data class Item(
 ) {
     fun dueOn(date: LocalDate): Boolean =
         !paused && if (weekdays.isEmpty()) days.includes(date) else date.dayOfWeek.value in weekdays
+
+    /**
+     * Finished for the day, so Today hides it. A rule counts once it is marked kept;
+     * a slipped rule stays visible so the slip can be undone.
+     */
+    fun finishedFor(entry: Entry): Boolean = when (kind) {
+        Kind.CHECK -> entry.done
+        Kind.RULE -> entry.done && !entry.slipped
+        Kind.COUNT -> target > 0 && entry.count >= target
+        Kind.TIMED -> target > 0 && entry.minutes >= target
+    }
 }
 
 /** What was logged for one item on one day. */
@@ -124,6 +135,12 @@ data class Task(
         return (0L..6L).map { from.plusDays(it) }.firstOrNull { it.dayOfWeek.value in repeat }
     }
 
+    /** Whether it belongs on `date`'s list: a one-off on its day (or overdue), a repeating one on its next chosen day. */
+    fun dueOn(date: LocalDate): Boolean {
+        if (!repeats) return open && runCatching { !LocalDate.parse(this.date).isAfter(date) }.getOrDefault(false)
+        return date.dayOfWeek.value in repeat && !runCatching { LocalDate.parse(this.date).isAfter(date) }.getOrDefault(false)
+    }
+
     /** Ticks it off, or back on. For a repeating task that is the next occurrence only. */
     fun finish(today: LocalDate, finished: Boolean): Task = when {
         !repeats -> copy(done = finished)
@@ -136,7 +153,7 @@ data class Task(
 /** Everything the app stores. Days are keyed by ISO date. */
 @Serializable
 data class Journal(
-    val items: List<Item> = Catalog.defaults,
+    val items: List<Item> = emptyList(),
     val days: Map<String, Map<String, Entry>> = emptyMap(),
     val tasks: List<Task> = emptyList(),
 ) {

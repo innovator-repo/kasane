@@ -22,7 +22,7 @@
     <string name="rule_undo">Undo</string>
     <string name="open">Open</string>
 
-    <string name="habit_hint">Tap + to add a habit. Press and hold one to edit or remove it.</string>
+    <string name="habit_hint">Tap + to add a habit, task or rule. Press and hold a habit to edit or remove it.</string>
     <string name="habit_add">Add habit</string>
     <string name="habit_edit">Edit habit</string>
     <string name="habit_kind">How you track it</string>
@@ -101,13 +101,31 @@
     <string name="widget_all_done">Everything for today is done.</string>
     <string name="widget_next">Next: %1$s</string>
     <string name="widget_done">Done</string>
-    <string name="widget_add_task">+ Task</string>
+    <string name="widget_add_task">+ Add</string>
     <string name="widget_no_tasks">Nothing coming up.</string>
     <string name="widget_overdue">Overdue</string>
     <string name="widget_today">Today</string>
     <string name="widget_tomorrow">Tomorrow</string>
-    <plurals name="widget_in_days">
-        <item quantity="one">In %d day</item>
-        <item quantity="other">In %d days</item>
-    </plurals>
+    <string name="today_task_open">%1$d task open</string>
+    <string name="today_tasks_open">%1$d tasks open</string>
+    <string name="add_what">What would you like to add?</string>
+    <string name="add_what_hint">Choose a type to add to your schedule.</string>
+    <string name="add_type_habit">Habit</string>
+    <string name="add_type_habit_hint">Something to do on chosen days: a tick, a count or minutes</string>
+    <string name="add_type_task">Task</string>
+    <string name="add_type_task_hint">A one-off or repeating job with a date and reminder</string>
+    <string name="add_type_rule">Rule</string>
+    <string name="add_type_rule_hint">A boundary to keep each day, marked kept or slipped</string>
+    <string name="add_badge_habit">HABIT</string>
+    <string name="add_badge_task">TASK</string>
+    <string name="add_badge_rule">RULE</string>
+    <string name="filter_all">All</string>
+    <string name="today_tasks">Tasks</string>
+    <string name="today_tomorrow">Tomorrow</string>
+    <string name="today_all_done">All done for today</string>
+    <string name="today_nothing">Nothing here yet</string>
+    <string name="today_nothing_hint">Tap + to add your first habit, task or rule.</string>
+    <string name="today_show_completed">Show completed (%1$d)</string>
+    <string name="today_hide_completed">Hide completed</string>
+    <string name="rule_mark_kept">Kept</string>
 </resources>

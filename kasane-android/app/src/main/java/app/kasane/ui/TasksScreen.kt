@@ -51,17 +51,9 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
 @Composable
-fun TasksScreen(modifier: Modifier = Modifier, addRequested: Boolean = false, onAddShown: () -> Unit = {}) {
+fun TasksScreen(modifier: Modifier = Modifier, onAdd: () -> Unit = {}) {
     val store = LocalContext.current.store
     val journal by store.journal.collectAsStateWithLifecycle()
-    var adding by remember { mutableStateOf(false) }
-    // A widget's add button opens the form straight away.
-    LaunchedEffect(addRequested) {
-        if (addRequested) {
-            adding = true
-            onAddShown()
-        }
-    }
     val today = LocalDate.now()
     // Open tasks by the date they are next due, then finished one-offs from the last week, newest first.
     val open = journal.tasks.filter { it.open }.sortedBy { it.nextDate(today) ?: LocalDate.MAX }
@@ -112,19 +104,15 @@ fun TasksScreen(modifier: Modifier = Modifier, addRequested: Boolean = false, on
                 }
             }
         }
-        FloatingActionButton(onClick = { adding = true }, modifier = Modifier.align(Alignment.BottomEnd).padding(20.dp)) {
+        FloatingActionButton(onClick = onAdd, modifier = Modifier.align(Alignment.BottomEnd).padding(20.dp)) {
             Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.tasks_add))
         }
-    }
-    if (adding) AddTaskDialog(onDismiss = { adding = false }) { title, date, minute, repeat, alert ->
-        store.addTask(title, date, minute, repeat, alert)
-        adding = false
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AddTaskDialog(onDismiss: () -> Unit, onAdd: (String, LocalDate, Int?, List<Int>, Alert) -> Unit) {
+internal fun AddTaskDialog(onDismiss: () -> Unit, onAdd: (String, LocalDate, Int?, List<Int>, Alert) -> Unit) {
     var title by remember { mutableStateOf("") }
     var date by remember { mutableStateOf(LocalDate.now()) }
     var minute by remember { mutableStateOf<Int?>(9 * 60) }
