@@ -132,4 +132,74 @@
         <item quantity="one">In %d day</item>
         <item quantity="other">In %d days</item>
     </plurals>
+
+    <!-- Lume: notifications -->
+    <string name="channel_handoff">Duolingo to Ren hand-off</string>
+    <string name="handoff_title">Duolingo logged!</string>
+    <string name="handoff_text">Your brain is warmed up. Tap to clear your cards in Ren right now.</string>
+    <string name="handoff_text_quick">Duolingo logged. It is late, so a 5-card quick round in Ren keeps today safe.</string>
+    <string name="ritual_title">Japanese Evening Ritual (Duolingo + Ren)</string>
+    <string name="ritual_text">Step 1: one Duolingo lesson. Step 2: your due cards in Ren.</string>
+    <string name="ritual_text_live">Step 1: one Duolingo lesson. Step 2: %1$d due cards in Ren. Keep your %2$d%% retention intact.</string>
+    <string name="anchor_ren_live">%1$d cards due in Ren, %2$d%% retention.</string>
+    <string name="action_open_duolingo">1. Open Duolingo</string>
+    <string name="action_quick_ren">Quick Ren only (5 cards)</string>
+    <string name="action_start_now">Start now</string>
+    <string name="action_floor">2-min floor</string>
+    <string name="action_snooze">Snooze 45m</string>
+    <string name="action_quick_save">5-card quick save (90s)</string>
+    <string name="action_shield">90-second streak shield: do 5 cards now</string>
+    <string name="action_declare_exception">Declare exception</string>
+    <string name="save_title">Still open before the 22:00 sleep lock</string>
+    <string name="save_text">Protect today\'s momentum: %1$s.</string>
+    <string name="save_text_live">Protect your %1$d%% Japanese retention and %2$d-day streak: %3$s.</string>
+    <string name="shield_title">Streak shield</string>
+    <string name="shield_text">One hour to the sleep lock. Still open: %1$s.</string>
+
+    <!-- Lume: Today -->
+    <string name="now_label">Now</string>
+    <string name="now_all_done">Everything for now is done</string>
+    <string name="now_all_done_hint">Rest, or pick something from the lists below.</string>
+    <string name="now_start_timer">Start %1$d min paced timer</string>
+    <string name="now_pause">Pause</string>
+    <string name="now_breathe_in">Breathe in</string>
+    <string name="now_breathe_out">Breathe out</string>
+    <string name="now_quick_round">2-min quick round</string>
+    <string name="now_full_session">Full session</string>
+    <string name="now_mark_done">Mark done</string>
+    <string name="now_floor_set">Floor: %1$d</string>
+    <string name="now_ren_live">%1$d due · %2$d%% retention</string>
+    <string name="floor_chip">Low-energy day</string>
+    <string name="floor_chip_on">Floor mode on</string>
+    <string name="floor_kept">Floor kept · momentum protected</string>
+    <string name="floor_park">Done for today</string>
+    <string name="tier_floor">Floor</string>
+    <string name="tier_target">Target</string>
+    <string name="tier_stretch">Stretch</string>
+    <string name="drawer_summary">%1$s · %2$d of %3$d</string>
+    <string name="drawer_rules_summary">All-day rules · %1$d of %2$d kept. Tap to review or log an exception</string>
+    <string name="rule_exception">Planned exception</string>
+    <string name="rule_exception_planned">Planned exception · momentum frozen</string>
+    <string name="rule_exception_request">Ask to set aside</string>
+    <string name="rule_exception_cooling">Asked. It can be set aside 24 hours from now, or before 08:00.</string>
+    <string name="rule_exception_cold_hint">Exceptions are planned in a calm moment: before 08:00, or after 24 hours.</string>
+
+    <!-- Lume: Momentum -->
+    <string name="eco_title">From your other apps</string>
+    <string name="eco_vow">Vow: %1$d min reclaimed · %2$d short-video attempts blocked</string>
+    <string name="eco_ren">Ren: %1$d%% recall · %2$d ms per card · %3$d due</string>
+    <string name="eco_katachi">Katachi: %1$d of %2$d solved</string>
+
+    <!-- Lume: widget -->
+    <string name="widget_horizon_name">Lume Horizon</string>
+    <string name="widget_horizon_description">Momentum, the next habit, and quick launch for Ren, Katachi and Sigil.</string>
+    <string name="widget_horizon_sleep_lock">Sleep lock</string>
+    <string name="widget_horizon_momentum">%1$d%% momentum</string>
+    <string name="widget_horizon_rules">%1$d of %2$d rules kept</string>
+    <string name="widget_horizon_reclaimed">%1$d h reclaimed</string>
+    <string name="widget_horizon_nothing">Nothing open right now</string>
+    <string name="widget_horizon_ren">%1$d due</string>
+    <string name="widget_horizon_katachi">%1$d of %2$d</string>
+    <string name="widget_horizon_sigil">Note</string>
+    <string name="widget_horizon_log">Log</string>
 </resources>

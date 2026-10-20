@@ -41,10 +41,19 @@ class KasaneApp : Application() {
             enableVibration(true)
             vibrationPattern = longArrayOf(0, 800, 400, 800, 400, 800)
         }
-        getSystemService(NotificationManager::class.java).createNotificationChannels(listOf(light, medium, strong))
+        // The hand-off banner pops up over whatever is on screen, right after Duolingo is logged.
+        val handoff = NotificationChannel(CHANNEL_HANDOFF, getString(R.string.channel_handoff),
+            NotificationManager.IMPORTANCE_HIGH).apply {
+            setSound(null, null)
+            enableVibration(true)
+            vibrationPattern = longArrayOf(0, 60, 60, 60)
+        }
+        getSystemService(NotificationManager::class.java).createNotificationChannels(listOf(light, medium, strong, handoff))
     }
 
     companion object {
+        const val CHANNEL_HANDOFF = "handoff"
+
         /** The medium channel keeps the original id, so settings made for it carry over. */
         fun channelFor(alert: Alert): String = when (alert) {
             Alert.LIGHT -> "reminders_light"

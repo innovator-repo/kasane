@@ -2,6 +2,14 @@ package app.kasane.widget
 
 import android.content.Intent
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.Color
+import androidx.glance.unit.ColorProvider
+import app.kasane.core.Orchestrator
+import app.kasane.designsystem.LumePalette
+import app.kasane.store
+import java.time.LocalDateTime
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceModifier
@@ -38,11 +46,20 @@ internal fun WidgetCard(tab: Int, content: @Composable ColumnScope.() -> Unit) {
     val open = Intent(context, MainActivity::class.java)
         .putExtra(MainActivity.EXTRA_TAB, tab)
         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-    Column(
-        GlanceModifier.fillMaxSize().appWidgetBackground().background(GlanceTheme.colors.surface)
-            .cornerRadius(20.dp).padding(14.dp).clickable(actionStartActivity(open)),
-        content = content,
-    )
+    // After 21:00, with Ren or Duolingo still open, the card gets an amber ring.
+    val journal by context.store.journal.collectAsState()
+    val urgent = Orchestrator.urgent(journal, LocalDateTime.now(), context.store.floorToday())
+    Box(
+        GlanceModifier.fillMaxSize().appWidgetBackground().cornerRadius(22.dp)
+            .background(if (urgent) ColorProvider(LumePalette.Urgent) else ColorProvider(Color.Transparent))
+            .padding(if (urgent) 2.dp else 0.dp),
+    ) {
+        Column(
+            GlanceModifier.fillMaxSize().background(GlanceTheme.colors.surface)
+                .cornerRadius(20.dp).padding(14.dp).clickable(actionStartActivity(open)),
+            content = content,
+        )
+    }
 }
 
 /** A small "+ Add" button that opens the app's habit / task / rule chooser. */

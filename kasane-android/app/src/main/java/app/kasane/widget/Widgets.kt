@@ -26,6 +26,7 @@ object Widgets {
             TodayWidget().updateAll(app)
             TasksWidget().updateAll(app)
             AllWidget().updateAll(app)
+            HorizonWidget().updateAll(app)
         }
     }
 }
