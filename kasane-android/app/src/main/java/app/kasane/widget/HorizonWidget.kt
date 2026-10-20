@@ -1,6 +1,14 @@
 package app.kasane.widget
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import androidx.core.content.res.ResourcesCompat
+import androidx.glance.Image
+import androidx.glance.ImageProvider
+import androidx.glance.layout.size
+import app.kasane.designsystem.LumeType
 import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -52,6 +60,7 @@ import app.kasane.designsystem.LumePalette
 import app.kasane.ipc.Ecosystem
 import app.kasane.ipc.KatachiStatus
 import app.kasane.ipc.RenStatus
+import app.kasane.ipc.SleepLockStore
 import app.kasane.ipc.VowStatus
 import app.kasane.store
 import java.time.LocalDate
@@ -90,7 +99,7 @@ private fun HorizonContent(journal: Journal, floor: Boolean, peers: Peers) {
     val context = LocalContext.current
     val now = LocalDateTime.now()
     val today = LocalDate.now()
-    val phase = Phase.of(now.toLocalTime())
+    val phase = Phase.surfaceOf(now.toLocalTime(), SleepLockStore.active(context))
     val momentum = remember(journal) {
         Analysis(journal, today, LumeCore.active).momentum().map { it.value }.average()
             .takeIf { !it.isNaN() }?.times(100)?.roundToInt() ?: 0
@@ -98,6 +107,7 @@ private fun HorizonContent(journal: Journal, floor: Boolean, peers: Peers) {
     val item = NowPick.next(journal, today, now.toLocalTime(), floorMode = floor)
     val urgent = Orchestrator.urgent(journal, now, floor)
     val rules = journal.items.filter { it.kind == Kind.RULE && it.dueOn(today) }
+    val emblem = remember { emblemBitmap(context) }
     val kept = rules.count { it.finishedFor(journal.entry(today, it.id)) }
 
     // The border is a ring of colour around the card; amber when Japanese is running out of day.
@@ -113,6 +123,8 @@ private fun HorizonContent(journal: Journal, floor: Boolean, peers: Peers) {
         ) {
             // Top band
             Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Image(ImageProvider(emblem), contentDescription = null, modifier = GlanceModifier.size(20.dp))
+                Spacer(GlanceModifier.width(6.dp))
                 Text(phaseLabel(context, phase), style = TextStyle(color = GlanceTheme.colors.primary, fontSize = 12.sp,
                     fontWeight = FontWeight.Medium), modifier = GlanceModifier.defaultWeight())
                 Text(context.getString(R.string.widget_horizon_momentum, momentum), style = headlineStyle(14))
@@ -188,3 +200,18 @@ private fun phaseLabel(context: Context, phase: Phase): String = when (phase) {
 
 private fun nowActionLabel(context: Context, item: Item): String =
     if (item.kind == Kind.CHECK) context.getString(R.string.widget_done) else "+${quickStep(item)}"
+
+/** 重ね in Noto Serif JP, drawn to a small bitmap because a widget cannot load app fonts. */
+private fun emblemBitmap(context: Context): Bitmap {
+    val px = (40 * context.resources.displayMetrics.density).toInt()
+    val bitmap = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888)
+    val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = 0xFF6B7BD6.toInt()
+        textSize = px * 0.48f
+        typeface = ResourcesCompat.getFont(context, R.font.noto_serif_jp_semibold)
+    }
+    val text = LumeType.EMBLEM
+    val canvas = Canvas(bitmap)
+    canvas.drawText(text, (px - paint.measureText(text)) / 2f, px * 0.64f, paint)
+    return bitmap
+}

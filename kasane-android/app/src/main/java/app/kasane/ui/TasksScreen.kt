@@ -121,7 +121,8 @@ internal fun AddTaskDialog(onDismiss: () -> Unit, onAdd: (String, LocalDate, Int
     var alert by remember { mutableStateOf(Alert.MEDIUM) }
     var pickDate by remember { mutableStateOf(false) }
     var pickTime by remember { mutableStateOf(false) }
-    val lock = remember { SleepLock() }
+    val lockContext = androidx.compose.ui.platform.LocalContext.current
+    val lock = remember { app.kasane.ipc.SleepLockStore.active(lockContext) ?: SleepLock(0, 0) }
 
     AlertDialog(
         onDismissRequest = onDismiss,

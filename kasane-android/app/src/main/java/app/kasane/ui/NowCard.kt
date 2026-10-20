@@ -32,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.stringResource
@@ -74,14 +75,16 @@ fun NowRitualCard(
 ) {
     val c = Lume.colors
     val shape = RoundedCornerShape(20.dp)
-    Column(
+    Box(
         Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp).fillMaxWidth()
             .shadow(if (c.dark) 0.dp else 8.dp, shape, ambientColor = c.accent.copy(alpha = 0.25f), spotColor = c.accent.copy(alpha = 0.25f))
             .background(if (c.dark) c.grouped else c.canvas, shape)
             .border(1.dp, c.accent.copy(alpha = 0.35f), shape)
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+            .clip(shape),
     ) {
+      Text(LumeType.EMBLEM, style = LumeType.Kanji, fontSize = 96.sp, color = c.accent.copy(alpha = 0.07f),
+          modifier = Modifier.align(Alignment.BottomEnd).padding(end = 12.dp, bottom = 4.dp))
+      Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(stringResource(R.string.now_label).uppercase() + " · " + blockLabel.uppercase(),
                 color = c.accent, fontSize = 12.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
@@ -96,6 +99,7 @@ fun NowRitualCard(
         }
         Text(stringResource(R.string.today_progress, doneCount, total), color = c.textSecondary, fontSize = 12.sp,
             fontFamily = LumeType.GeistMono)
+      }
     }
 }
 

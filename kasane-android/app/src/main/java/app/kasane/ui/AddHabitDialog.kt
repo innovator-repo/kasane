@@ -67,7 +67,8 @@ fun AddHabitDialog(
     var minute by remember { mutableStateOf(existing?.remindAt) }
     var alert by remember { mutableStateOf(existing?.alert ?: Alert.MEDIUM) }
     var pickTime by remember { mutableStateOf(false) }
-    val lock = remember { SleepLock() }
+    val lockContext = androidx.compose.ui.platform.LocalContext.current
+    val lock = remember { app.kasane.ipc.SleepLockStore.active(lockContext) ?: SleepLock(0, 0) }
     val needsTarget = kind == Kind.COUNT || kind == Kind.TIMED
     val goal = target.toIntOrNull()?.takeIf { it > 0 }
     val ready = title.isNotBlank() && (!needsTarget || goal != null) && (days != null || weekdays.isNotEmpty())

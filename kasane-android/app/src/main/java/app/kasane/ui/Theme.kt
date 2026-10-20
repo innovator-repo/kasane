@@ -59,12 +59,17 @@ fun KasaneTheme(content: @Composable () -> Unit) {
 /** The phase of the day, re-read every minute so the surface shifts while the app is open. */
 @Composable
 private fun rememberPhase(): State<Phase> {
-    val phase = remember { mutableStateOf(Phase.of(LocalTime.now())) }
+    val context = LocalContext.current
+    val phase = remember { mutableStateOf(surface(context)) }
     LaunchedEffect(Unit) {
         while (true) {
             delay(60_000)
-            phase.value = Phase.of(LocalTime.now())
+            phase.value = surface(context)
         }
     }
     return phase
 }
+
+/** Evening and night go dark, and while the sleep lock holds the surface stays quiet until it lifts. */
+private fun surface(context: android.content.Context): Phase =
+    Phase.surfaceOf(LocalTime.now(), app.kasane.ipc.SleepLockStore.active(context))
