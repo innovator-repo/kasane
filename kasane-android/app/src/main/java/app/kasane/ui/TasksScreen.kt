@@ -14,7 +14,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Checkbox
+import app.kasane.designsystem.GroupedList
+import app.kasane.designsystem.Lume
+import app.kasane.designsystem.LumeCheck
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -71,17 +73,15 @@ fun TasksScreen(modifier: Modifier = Modifier, onAdd: () -> Unit = {}) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 20.dp))
                 }
             }
-            items(open + finished, key = { it.id }) { task ->
+            item(key = "tasks") { GroupedList(open + finished) { task ->
                 val date = task.nextDate(today)
                 val done = task.doneOn(today)
                 val late = date != null && date.isBefore(today) && !done
                 Row(
-                    Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 2.dp)
-                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
-                        .padding(start = 4.dp, end = 4.dp),
+                    Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Checkbox(checked = done, onCheckedChange = { store.setTaskDone(task.id, it) })
+                    LumeCheck(done, { store.setTaskDone(task.id, it) })
                     Column(Modifier.weight(1f).padding(vertical = 10.dp)) {
                         Text(task.title, style = MaterialTheme.typography.bodyLarge)
                         val time = task.remindAt?.let { "%02d:%02d".format(it / 60, it % 60) }
@@ -96,13 +96,13 @@ fun TasksScreen(modifier: Modifier = Modifier, onAdd: () -> Unit = {}) {
                         } else listOfNotNull(day, time)
                         Text(line.joinToString(" · "),
                             style = MaterialTheme.typography.bodySmall,
-                            color = if (late) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
+                            color = if (late) Lume.colors.caution else MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     IconButton(onClick = { store.deleteTask(task.id) }) {
                         Icon(Icons.Outlined.Delete, contentDescription = stringResource(R.string.delete))
                     }
                 }
-            }
+            } }
         }
         FloatingActionButton(onClick = onAdd, modifier = Modifier.align(Alignment.BottomEnd).padding(20.dp)) {
             Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.tasks_add))

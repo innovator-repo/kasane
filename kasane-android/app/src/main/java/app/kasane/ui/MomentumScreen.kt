@@ -17,6 +17,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import app.kasane.designsystem.GroupedList
+import app.kasane.ipc.EcoMetrics
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -44,6 +47,7 @@ fun MomentumScreen(modifier: Modifier = Modifier) {
                 }
             }
         }
+        item { EcoSection() }
         // Weakest first: that is where today's effort pays most.
         items(data?.momentum?.sortedBy { it.value } ?: emptyList(), key = { it.item.id }) { m ->
             Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -57,6 +61,34 @@ fun MomentumScreen(modifier: Modifier = Modifier) {
                 Text("${(m.value * 100).roundToInt()}", style = MaterialTheme.typography.labelMedium,
                     modifier = Modifier.width(36.dp).padding(start = 8.dp))
             }
+        }
+    }
+}
+
+/** The latest summaries Vow, Ren and Katachi sent over the on-device bus. Shows nothing until one arrives. */
+@Composable
+private fun EcoSection() {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val lines = remember {
+        listOfNotNull(
+            EcoMetrics.read(context, "vow")?.let {
+                context.getString(R.string.eco_vow, it.optInt("reclaimedMinutes"), it.optInt("shortVideoBlockAttempts"))
+            },
+            EcoMetrics.read(context, "ren")?.let {
+                context.getString(R.string.eco_ren, (it.optDouble("recallAccuracy") * 100).roundToInt().coerceAtMost(100),
+                    it.optInt("meanLatencyMs"), it.optInt("dueCount"))
+            },
+            EcoMetrics.read(context, "katachi")?.let {
+                context.getString(R.string.eco_katachi, it.optInt("solved"), it.optInt("target"))
+            },
+        )
+    }
+    if (lines.isEmpty()) return
+    Column(Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
+        Text(stringResource(R.string.eco_title).uppercase(), style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+        GroupedList(lines, Modifier.padding(top = 6.dp).padding(horizontal = 0.dp)) {
+            Text(it, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp))
         }
     }
 }

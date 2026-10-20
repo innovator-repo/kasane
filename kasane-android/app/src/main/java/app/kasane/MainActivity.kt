@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import app.kasane.ui.AddFlow
+import app.kasane.designsystem.rememberLumeHaptics
 import app.kasane.ui.KasaneTheme
 import app.kasane.ui.MomentumScreen
 import app.kasane.ui.TasksScreen
@@ -89,13 +90,14 @@ private val tabs = listOf(
 private fun Kasane(selected: MutableIntState, addChooser: MutableState<Boolean>) {
     var tab by selected
     val openAdd = { addChooser.value = true }
+    val haptics = rememberLumeHaptics()
     Scaffold(
         bottomBar = {
             NavigationBar {
                 tabs.forEachIndexed { index, item ->
                     NavigationBarItem(
                         selected = tab == index,
-                        onClick = { tab = index },
+                        onClick = { if (tab != index) haptics.tick(); tab = index },
                         icon = { Icon(item.icon, contentDescription = null) },
                         label = { Text(stringResource(item.label)) },
                     )
