@@ -41,6 +41,7 @@ fun WeekScreen(modifier: Modifier = Modifier) {
         item { Links(data?.knockOn, R.string.week_after_slip_line) }
         item { SectionLabel(stringResource(R.string.week_last_8)) }
         items(data?.weekly?.entries?.toList() ?: emptyList(), key = { it.key.id }) { (item, rates) ->
+ androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.animateItem()) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(item.title, style = MaterialTheme.typography.bodyMedium, maxLines = 1,
                     overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
@@ -53,6 +54,7 @@ fun WeekScreen(modifier: Modifier = Modifier) {
                 }
             }
         }
+}
     }
 }
 

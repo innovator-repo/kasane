@@ -50,6 +50,7 @@ fun MomentumScreen(modifier: Modifier = Modifier) {
         item { EcoSection() }
         // Weakest first: that is where today's effort pays most.
         items(data?.momentum?.sortedBy { it.value } ?: emptyList(), key = { it.item.id }) { m ->
+ androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.animateItem()) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(m.item.title, style = MaterialTheme.typography.bodyMedium, maxLines = 1,
                     overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
@@ -62,6 +63,7 @@ fun MomentumScreen(modifier: Modifier = Modifier) {
                     modifier = Modifier.width(36.dp).padding(start = 8.dp))
             }
         }
+}
     }
 }
 
