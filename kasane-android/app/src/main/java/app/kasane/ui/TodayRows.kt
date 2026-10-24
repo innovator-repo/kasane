@@ -163,7 +163,7 @@ private fun ExceptionLine(item: Item, entry: Entry, onChange: (Entry) -> Unit) {
     var message by remember(item.id) { mutableStateOf<Int?>(null) }
     Column(Modifier.padding(start = 44.dp)) {
         Text(stringResource(R.string.rule_exception), color = c.seal, fontSize = 12.sp, fontWeight = FontWeight.Medium,
-            modifier = Modifier.clickable {
+            modifier = Modifier.pressable().clickable {
                 if (store.declareException(java.time.LocalDate.now(), item.id)) {
                     message = null
                 } else {
