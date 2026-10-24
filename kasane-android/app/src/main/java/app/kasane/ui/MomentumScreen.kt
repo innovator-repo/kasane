@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+
 package app.kasane.ui
 
 import androidx.compose.foundation.background
@@ -81,7 +83,7 @@ fun MomentumScreen(modifier: Modifier = Modifier) {
         item { SectionLabel(stringResource(R.string.stat_by_habit)) }
         // Weakest first: that is where today's effort pays most.
         items(sorted, key = { it.item.id }) { m ->
-            Box(Modifier.animateItem().padding(horizontal = 20.dp, vertical = 4.dp)) {
+            Box(Modifier.animateItemPlacement().padding(horizontal = 20.dp, vertical = 4.dp)) {
                 StatCard {
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {

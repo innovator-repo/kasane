@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+
 package app.kasane.ui
 
 import androidx.compose.foundation.background
@@ -83,7 +85,7 @@ fun WeekScreen(modifier: Modifier = Modifier) {
         item { Links(data?.knockOn, R.string.week_after_slip_line) }
         item { SectionLabel(stringResource(R.string.week_last_8)) }
         items(data?.weekly?.entries?.toList() ?: emptyList(), key = { it.key.id }) { (item, rates) ->
-            Box(Modifier.animateItem().padding(horizontal = 20.dp, vertical = 4.dp)) {
+            Box(Modifier.animateItemPlacement().padding(horizontal = 20.dp, vertical = 4.dp)) {
                 StatCard {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Text(item.title, style = MaterialTheme.typography.bodyMedium, maxLines = 1,
