@@ -202,4 +202,14 @@
     <string name="widget_horizon_katachi">%1$d of %2$d</string>
     <string name="widget_horizon_sigil">Note</string>
     <string name="widget_horizon_log">Log</string>
+    <string name="stat_strongest">Strongest</string>
+    <string name="stat_weakest">Needs most care</string>
+    <string name="stat_active">Habits tracked</string>
+    <string name="stat_steady">Steady (70+)</string>
+    <string name="stat_this_week">This week</string>
+    <string name="stat_vs_last">vs last week</string>
+    <string name="stat_best_week">Best week</string>
+    <string name="stat_weekly_avg">Weekly average</string>
+    <string name="stat_trend">Weekly completion, all habits</string>
+    <string name="stat_by_habit">By habit</string>
 </resources>

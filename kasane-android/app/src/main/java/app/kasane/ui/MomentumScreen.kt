@@ -1,6 +1,8 @@
 package app.kasane.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,6 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import app.kasane.designsystem.Lume
 import app.kasane.designsystem.GroupedList
 import app.kasane.ipc.EcoMetrics
 import androidx.compose.ui.Alignment
@@ -32,38 +35,66 @@ import kotlin.math.roundToInt
 fun MomentumScreen(modifier: Modifier = Modifier) {
     val insights by rememberInsights()
     val data = insights
-    LazyColumn(modifier.fillMaxSize()) {
+    val sorted = data?.momentum?.sortedBy { it.value } ?: emptyList()
+    LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
         item {
             Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 8.dp)) {
                 Text(stringResource(R.string.tab_momentum), style = MaterialTheme.typography.headlineMedium)
                 Text(stringResource(R.string.momentum_explain), style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
-                if (data != null) {
-                    val overall = data.momentum.map { it.value }.average().takeIf { !it.isNaN() } ?: 0.0
-                    Text(stringResource(R.string.momentum_overall, (overall * 100).roundToInt()),
-                        style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 12.dp))
-                    Text(stringResource(if (data.engineIsLume) R.string.engine_lume else R.string.engine_kotlin),
-                        style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        if (data != null && sorted.isNotEmpty()) {
+            val overall = sorted.map { it.value }.average()
+            item {
+                StatCard(Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                        StatRing(overall.toFloat(), "${(overall * 100).roundToInt()}")
+                        Column(Modifier.weight(1f)) {
+                            Text(stringResource(R.string.momentum_overall, (overall * 100).roundToInt()),
+                                style = MaterialTheme.typography.titleMedium)
+                            Text(stringResource(if (data.engineIsLume) R.string.engine_lume else R.string.engine_kotlin),
+                                style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 4.dp))
+                        }
+                    }
+                }
+            }
+            item {
+                val best = sorted.last()
+                val worst = sorted.first()
+                Column(Modifier.padding(horizontal = 20.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        StatTile("${(best.value * 100).roundToInt()}", stringResource(R.string.stat_strongest) + ": " + best.item.title,
+                            Modifier.weight(1f), Lume.colors.target)
+                        StatTile("${(worst.value * 100).roundToInt()}", stringResource(R.string.stat_weakest) + ": " + worst.item.title,
+                            Modifier.weight(1f), Lume.colors.slip)
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        StatTile("${sorted.size}", stringResource(R.string.stat_active), Modifier.weight(1f))
+                        StatTile("${sorted.count { it.value >= 0.7 }}", stringResource(R.string.stat_steady), Modifier.weight(1f), Lume.colors.accent)
+                    }
                 }
             }
         }
         item { EcoSection() }
+        item { SectionLabel(stringResource(R.string.stat_by_habit)) }
         // Weakest first: that is where today's effort pays most.
-        items(data?.momentum?.sortedBy { it.value } ?: emptyList(), key = { it.item.id }) { m ->
- androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.animateItem()) {
-            Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(m.item.title, style = MaterialTheme.typography.bodyMedium, maxLines = 1,
-                    overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                Box(Modifier.width(120.dp).height(8.dp)
-                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp))) {
-                    Box(Modifier.fillMaxHeight().fillMaxWidth(m.value.toFloat().coerceIn(0f, 1f))
-                        .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp)))
+        items(sorted, key = { it.item.id }) { m ->
+            Box(Modifier.animateItem().padding(horizontal = 20.dp, vertical = 4.dp)) {
+                StatCard {
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(m.item.title, style = MaterialTheme.typography.bodyMedium, maxLines = 1,
+                                overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                            Text("${(m.value * 100).roundToInt()}", style = MaterialTheme.typography.titleMedium)
+                        }
+                        StatBar(m.value.toFloat(), Modifier.fillMaxWidth().padding(top = 8.dp),
+                            if (m.value >= 0.7) Lume.colors.target else if (m.value >= 0.4) Lume.colors.accent else Lume.colors.slip)
+                    }
                 }
-                Text("${(m.value * 100).roundToInt()}", style = MaterialTheme.typography.labelMedium,
-                    modifier = Modifier.width(36.dp).padding(start = 8.dp))
             }
         }
-}
     }
 }
 
