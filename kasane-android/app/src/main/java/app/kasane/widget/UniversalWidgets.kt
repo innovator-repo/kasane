@@ -41,7 +41,7 @@ import app.kasane.R
 import app.kasane.core.NextUp
 import app.kasane.designsystem.LumeTokens
 import app.kasane.ipc.AppFact
-import app.kasane.ipc.Companion
+import app.kasane.ipc.Companion as Peer
 import app.kasane.ipc.Ecosystem
 import app.kasane.ipc.LumeApp
 import app.kasane.ipc.readFacts
@@ -175,7 +175,7 @@ class QuickAddWidget : GlanceAppWidget() {
                 add(R.string.qa_task to Intent(context, MainActivity::class.java).setAction(MainActivity.ACTION_ADD_FROM_WIDGET)
                     .putExtra(MainActivity.EXTRA_PROMPT_ADD_TYPE, true)
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP))
-                fun maybe(label: Int, app: LumeApp, link: Intent?) { if (link != null && Companion.available(context, app.pkg)) add(label to link) }
+                fun maybe(label: Int, app: LumeApp, link: Intent?) { if (link != null && Peer.available(context, app.pkg)) add(label to link) }
                 maybe(R.string.qa_note, LumeApp.SIGIL, Ecosystem.sigilIntent(context))
                 maybe(R.string.qa_review, LumeApp.REN, Ecosystem.renIntent(context, true))
                 maybe(R.string.qa_puzzle, LumeApp.KATACHI, Ecosystem.katachiIntent(context))

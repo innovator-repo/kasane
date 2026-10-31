@@ -65,7 +65,7 @@ import app.kasane.core.Phase
 import app.kasane.designsystem.LumePalette
 import app.kasane.designsystem.LumeTokens
 import app.kasane.designsystem.LumeType
-import app.kasane.ipc.Companion
+import app.kasane.ipc.Companion as Peer
 import app.kasane.ipc.Ecosystem
 import app.kasane.ipc.KatachiStatus
 import app.kasane.ipc.RenStatus
@@ -119,10 +119,10 @@ class HorizonWidget : GlanceAppWidget() {
             val ren = async(Dispatchers.IO) { Ecosystem.renStatus(context) }
             val katachi = async(Dispatchers.IO) { Ecosystem.katachiStatus(context) }
             val vow = async(Dispatchers.IO) { Ecosystem.vowStatus(context) }
-            val renOn = async(Dispatchers.IO) { Companion.available(context, Ecosystem.REN) }
-            val katachiOn = async(Dispatchers.IO) { Companion.available(context, Ecosystem.KATACHI) }
-            val sigilOn = async(Dispatchers.IO) { Companion.available(context, Ecosystem.SIGIL) }
-            val vowOn = async(Dispatchers.IO) { Companion.available(context, Ecosystem.VOW) }
+            val renOn = async(Dispatchers.IO) { Peer.available(context, Ecosystem.REN) }
+            val katachiOn = async(Dispatchers.IO) { Peer.available(context, Ecosystem.KATACHI) }
+            val sigilOn = async(Dispatchers.IO) { Peer.available(context, Ecosystem.SIGIL) }
+            val vowOn = async(Dispatchers.IO) { Peer.available(context, Ecosystem.VOW) }
             // A companion counts only when installed AND its provider answers.
             Peers(if (renOn.await()) ren.await() else null, if (katachiOn.await()) katachi.await() else null,
                 if (vowOn.await()) vow.await() else null,
