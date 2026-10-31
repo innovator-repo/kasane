@@ -32,7 +32,7 @@ class LogCheckReceiver : BroadcastReceiver() {
     }
 }
 
-/** Ren, Katachi and Vow send a small JSON summary, kept for the Momentum screen. */
+/** Ren, Katachi and Vow send a small JSON summary, kept on the device. */
 class EcoMetricsReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (!LumeTrust.fromPeer(intent)) return

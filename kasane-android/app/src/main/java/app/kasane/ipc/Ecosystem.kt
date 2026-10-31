@@ -94,6 +94,12 @@ object Ecosystem {
 
     fun sigilIntent(context: Context): Intent? = deepLink(context, SIGIL, "sigil://note/quick")
 
+    fun vowIntent(context: Context): Intent? = deepLink(context, VOW, "vow://focus/toggle")
+
+    /** Opens an installed app's own screen, or null when it is missing. */
+    fun launchIntent(context: Context, pkg: String): Intent? =
+        context.packageManager.getLaunchIntentForPackage(pkg)?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
     private fun deepLink(context: Context, pkg: String, uri: String): Intent? =
         if (installed(context, pkg)) Intent(Intent.ACTION_VIEW, Uri.parse(uri)).setPackage(pkg)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) else null

@@ -39,29 +39,6 @@ private val Colors = ColorProviders(light = Light, dark = Dark)
 @Composable
 internal fun KasaneWidgetTheme(content: @Composable () -> Unit) = GlanceTheme(colors = Colors, content = content)
 
-/** The widget's background; tapping anywhere outside a button opens the app on [tab]. */
-@Composable
-internal fun WidgetCard(tab: Int, content: @Composable ColumnScope.() -> Unit) {
-    val context = LocalContext.current
-    val open = Intent(context, MainActivity::class.java)
-        .putExtra(MainActivity.EXTRA_TAB, tab)
-        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-    // After 21:00, with Ren or Duolingo still open, the card gets an amber ring.
-    val journal by context.store.journal.collectAsState()
-    val urgent = Orchestrator.urgent(journal, LocalDateTime.now(), context.store.floorToday())
-    Box(
-        GlanceModifier.fillMaxSize().appWidgetBackground().cornerRadius(22.dp)
-            .background(if (urgent) ColorProvider(LumePalette.Urgent) else ColorProvider(Color.Transparent))
-            .padding(if (urgent) 2.dp else 0.dp),
-    ) {
-        Column(
-            GlanceModifier.fillMaxSize().background(GlanceTheme.colors.surface)
-                .cornerRadius(20.dp).padding(14.dp).clickable(actionStartActivity(open)),
-            content = content,
-        )
-    }
-}
-
 /** A small "+ Add" button that opens the app's habit / task / rule chooser. */
 @Composable
 internal fun AddButton() {

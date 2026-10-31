@@ -61,19 +61,12 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
 @Composable
-fun TasksScreen(modifier: Modifier = Modifier, onAdd: () -> Unit = {}) {
+fun TasksScreen(modifier: Modifier = Modifier, onBack: () -> Unit = {}, onAdd: () -> Unit = {}) {
     val store = LocalContext.current.store
     val journal by store.journal.collectAsStateWithLifecycle()
     val today = LocalDate.now()
     var editing by remember { mutableStateOf<Task?>(null) }
     var selected by remember { mutableStateOf<String?>(null) }   // null = every list
-    // A row tapped in the widget opens its edit form straight away.
-    val requested by app.kasane.MainActivity.taskToOpen
-    androidx.compose.runtime.LaunchedEffect(requested, journal.tasks) {
-        val id = requested ?: return@LaunchedEffect
-        journal.tasks.firstOrNull { it.id == id }?.let { editing = it }
-        app.kasane.MainActivity.taskToOpen.value = null
-    }
     var newList by remember { mutableStateOf(false) }
     var removeList by remember { mutableStateOf<TaskList?>(null) }
     val inList = journal.tasks.filter {
@@ -88,9 +81,10 @@ fun TasksScreen(modifier: Modifier = Modifier, onAdd: () -> Unit = {}) {
 
     Box(modifier.fillMaxSize()) {
         LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 96.dp)) {
+            item { BackHeader(stringResource(R.string.tab_tasks), onBack) }
             item {
                 Text(stringResource(R.string.tab_tasks), style = MaterialTheme.typography.headlineMedium,
-                    modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 8.dp))
+                    modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 8.dp))
             }
             item(key = "lists") {
                 Row(Modifier.padding(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {

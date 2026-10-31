@@ -83,36 +83,44 @@
 
         <receiver android:name=".reminders.NotificationActionReceiver" android:exported="false" />
 
-        <receiver android:name=".widget.TodayWidgetReceiver" android:exported="true"
-            android:label="@string/widget_today_name">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            </intent-filter>
-            <meta-data android:name="android.appwidget.provider" android:resource="@xml/today_widget_info" />
-        </receiver>
-
-        <receiver android:name=".widget.TasksWidgetReceiver" android:exported="true"
-            android:label="@string/widget_tasks_name">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            </intent-filter>
-            <meta-data android:name="android.appwidget.provider" android:resource="@xml/tasks_widget_info" />
-        </receiver>
-
-        <receiver android:name=".widget.AllWidgetReceiver" android:exported="true"
-            android:label="@string/widget_all_name">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            </intent-filter>
-            <meta-data android:name="android.appwidget.provider" android:resource="@xml/all_widget_info" />
-        </receiver>
-
         <receiver android:name=".widget.HorizonWidgetReceiver" android:exported="true"
             android:label="@string/widget_horizon_name">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/horizon_widget_info" />
+        </receiver>
+
+        <receiver android:name=".widget.NextUpWidgetReceiver" android:exported="true"
+            android:label="@string/widget_nextup_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/nextup_widget_info" />
+        </receiver>
+
+        <receiver android:name=".widget.UniversalTodayWidgetReceiver" android:exported="true"
+            android:label="@string/widget_universal_today_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/utoday_widget_info" />
+        </receiver>
+
+        <receiver android:name=".widget.DockWidgetReceiver" android:exported="true"
+            android:label="@string/widget_dock_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/dock_widget_info" />
+        </receiver>
+
+        <receiver android:name=".widget.QuickAddWidgetReceiver" android:exported="true"
+            android:label="@string/widget_quickadd_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/quickadd_widget_info" />
         </receiver>
     </application>
 </manifest>

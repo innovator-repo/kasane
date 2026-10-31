@@ -3,7 +3,7 @@ package app.kasane.ipc
 import android.content.Context
 import org.json.JSONObject
 
-/** The latest summary each app sent, read back by the Momentum screen. Stays on the device. */
+/** The latest summary each app sent, Stays on the device. */
 object EcoMetrics {
     private val SOURCES = setOf("vow", "ren", "katachi")
     private const val MAX_LENGTH = 2000

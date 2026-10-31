@@ -5,18 +5,25 @@ import android.content.ContentValues
 import android.database.Cursor
 import android.database.MatrixCursor
 import android.net.Uri
-import app.kasane.LumeCore
-import app.kasane.core.Analysis
+import app.kasane.core.NextUp
+import app.kasane.core.NextUpSummary
 import app.kasane.core.Kind
 import app.kasane.core.Phase
 import app.kasane.store
 import java.time.LocalDate
 import java.time.LocalTime
-import kotlin.math.roundToInt
+
+/** The status row's shape, kept apart from the provider so it can be tested. */
+object KasaneStatusRow {
+    val COLUMNS = arrayOf("block", "rulesKept", "rulesTotal", "nextTitle", "nextAtMinute", "openCount", "doneCount")
+
+    fun values(summary: NextUpSummary, block: String, rulesKept: Int, rulesTotal: Int): Array<Any> =
+        arrayOf(block, rulesKept, rulesTotal, summary.next?.title ?: "", summary.nextAtMinute, summary.openCount, summary.doneCount)
+}
 
 /**
- * `content://app.kasane.provider/status`, read-only, one row:
- * momentum 0..100, the open block, and today's rules kept of total.
+ * `content://app.kasane.provider/status`, read-only, one row: the open block, today's rules kept of
+ * total, the next task (`nextTitle`, `nextAtMinute` or -1), and `openCount` / `doneCount` for today.
  * Only the Lume apps may read it (LumeTrust).
  */
 class KasaneStatusProvider : ContentProvider() {
@@ -28,14 +35,12 @@ class KasaneStatusProvider : ContentProvider() {
         val context = context ?: return null
         val journal = context.store.journal.value
         val today = LocalDate.now()
-        val momentum = Analysis(journal, today, LumeCore.active).momentum().map { it.value }
-            .average().takeIf { !it.isNaN() }?.times(100)?.roundToInt() ?: 0
         val rules = journal.items.filter { it.kind == Kind.RULE && it.dueOn(today) }
         val kept = rules.count { it.finishedFor(journal.entry(today, it.id)) }
         val block = if (Phase.surfaceOf(LocalTime.now(), SleepLockStore.active(context)) == Phase.SANCTUARY) "SLEEP_LOCK"
         else Phase.of(LocalTime.now()).block.name
-        return MatrixCursor(arrayOf("momentum", "block", "rulesKept", "rulesTotal")).apply {
-            addRow(arrayOf<Any>(momentum.coerceIn(0, 100), block, kept, rules.size))
+        return MatrixCursor(KasaneStatusRow.COLUMNS).apply {
+            addRow(KasaneStatusRow.values(NextUp.summary(journal.tasks, today), block, kept, rules.size))
         }
     }
 

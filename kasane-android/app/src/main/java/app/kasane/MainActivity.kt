@@ -3,73 +3,68 @@ package app.kasane
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.CalendarMonth
-import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material.icons.outlined.Insights
-import androidx.compose.material.icons.outlined.ShowChart
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.stringResource
-import app.kasane.ui.AddFlow
-import app.kasane.designsystem.rememberLumeHaptics
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.kasane.core.Task
+import app.kasane.core.Kind
+import app.kasane.designsystem.Lume
+import app.kasane.ui.AddHabitDialog
 import app.kasane.ui.KasaneTheme
-import app.kasane.ui.MomentumScreen
+import app.kasane.ui.NowScreen
+import app.kasane.ui.SettingsScreen
+import app.kasane.ui.TaskDialog
 import app.kasane.ui.TasksScreen
-import app.kasane.ui.TodayScreen
-import app.kasane.ui.WeekScreen
 
 class MainActivity : ComponentActivity() {
-    private val tab = mutableIntStateOf(0)
-    private val addChooser = mutableStateOf(false)
+    private val screen = mutableIntStateOf(SCREEN_NOW)
+    private val addTask = mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        tab.intValue = savedInstanceState?.getInt(EXTRA_TAB) ?: intent.getIntExtra(EXTRA_TAB, 0)
-        addChooser.value = savedInstanceState == null && wantsAddChooser(intent)
+        screen.intValue = savedInstanceState?.getInt(EXTRA_SCREEN) ?: SCREEN_NOW
+        addTask.value = savedInstanceState == null && wantsAdd(intent)
         if (savedInstanceState == null) readOpenTarget(intent)
         enableEdgeToEdge()
-        setContent { KasaneTheme { Kasane(tab, addChooser) } }
+        setContent { KasaneTheme { Kasane(screen, addTask) } }
     }
 
-    // A widget tap while the app is open switches to the widget's tab.
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        if (intent.hasExtra(EXTRA_TAB)) tab.intValue = intent.getIntExtra(EXTRA_TAB, 0)
-        if (wantsAddChooser(intent)) addChooser.value = true
+        if (wantsAdd(intent)) addTask.value = true
         readOpenTarget(intent)
     }
 
-    /** A tap on a row in a widget opens that task or habit, as a tap in the Reminder widget opens its detail. */
+    /** A tap on a row in a widget opens that task or habit for editing. */
     private fun readOpenTarget(intent: Intent) {
-        intent.getStringExtra(EXTRA_TASK_ID)?.let { taskToOpen.value = it; tab.intValue = 3 }
-        intent.getStringExtra(EXTRA_ITEM_ID)?.let { itemToOpen.value = it; tab.intValue = 0 }
+        intent.getStringExtra(EXTRA_TASK_ID)?.let { taskToOpen.value = it; screen.intValue = SCREEN_NOW }
+        intent.getStringExtra(EXTRA_ITEM_ID)?.let { itemToOpen.value = it; screen.intValue = SCREEN_NOW }
         intent.removeExtra(EXTRA_TASK_ID)
         intent.removeExtra(EXTRA_ITEM_ID)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putInt(EXTRA_TAB, tab.intValue)
+        outState.putInt(EXTRA_SCREEN, screen.intValue)
     }
 
-    /** A widget's + button asks which of habit, task or rule to add, once per tap. */
-    private fun wantsAddChooser(intent: Intent): Boolean {
+    /** A widget's + or New task button opens the new-task form, once per tap. */
+    private fun wantsAdd(intent: Intent): Boolean {
         val wants = intent.action == ACTION_ADD_FROM_WIDGET || intent.getBooleanExtra(EXTRA_PROMPT_ADD_TYPE, false)
         intent.removeExtra(EXTRA_PROMPT_ADD_TYPE)
         if (intent.action == ACTION_ADD_FROM_WIDGET) intent.action = null
@@ -77,8 +72,10 @@ class MainActivity : ComponentActivity() {
     }
 
     companion object {
-        /** Which tab to open on, from a widget: 0 Today, 1 Momentum, 2 Week, 3 Tasks. */
-        const val EXTRA_TAB = "tab"
+        const val EXTRA_SCREEN = "screen"
+        const val SCREEN_NOW = 0
+        const val SCREEN_LISTS = 1
+        const val SCREEN_SETTINGS = 2
 
         /** The task or habit a widget row asks to open for editing. */
         const val EXTRA_TASK_ID = "open_task"
@@ -88,47 +85,58 @@ class MainActivity : ComponentActivity() {
         val itemToOpen = mutableStateOf<String?>(null)
 
         const val ACTION_ADD_FROM_WIDGET = "app.kasane.action.ADD_FROM_WIDGET"
-
-        /** Asks for a habit, task or rule before the creation form, from a widget's add button. */
         const val EXTRA_PROMPT_ADD_TYPE = "extra_prompt_add_type"
     }
 }
 
-private data class Tab(val label: Int, val icon: ImageVector)
-
-private val tabs = listOf(
-    Tab(R.string.tab_today, Icons.Outlined.CheckCircle),
-    Tab(R.string.tab_momentum, Icons.Outlined.ShowChart),
-    Tab(R.string.tab_week, Icons.Outlined.Insights),
-    Tab(R.string.tab_tasks, Icons.Outlined.CalendarMonth),
-)
-
 @Composable
-private fun Kasane(selected: MutableIntState, addChooser: MutableState<Boolean>) {
-    var tab by selected
-    val openAdd = { addChooser.value = true }
-    val haptics = rememberLumeHaptics()
-    Scaffold(
-        bottomBar = {
-            NavigationBar {
-                tabs.forEachIndexed { index, item ->
-                    NavigationBarItem(
-                        selected = tab == index,
-                        onClick = { if (tab != index) haptics.tick(); tab = index },
-                        icon = { Icon(item.icon, contentDescription = null) },
-                        label = { Text(stringResource(item.label)) },
-                    )
-                }
-            }
-        },
-    ) { padding ->
-        val modifier = Modifier.padding(padding)
-        when (tab) {
-            0 -> TodayScreen(modifier, onAdd = openAdd)
-            1 -> MomentumScreen(modifier)
-            2 -> WeekScreen(modifier)
-            else -> TasksScreen(modifier, onAdd = openAdd)
+private fun Kasane(selected: MutableIntState, addTask: MutableState<Boolean>) {
+    var screen by selected
+    val store = LocalContext.current.store
+    val journal by store.journal.collectAsStateWithLifecycle()
+    var editing by remember { mutableStateOf<Task?>(null) }
+    val openAdd = { addTask.value = true }
+
+    // A row tapped in a widget opens its edit form straight away.
+    val requestedTask by MainActivity.taskToOpen
+    LaunchedEffect(requestedTask, journal.tasks) {
+        val id = requestedTask ?: return@LaunchedEffect
+        journal.tasks.firstOrNull { it.id == id }?.let { editing = it }
+        MainActivity.taskToOpen.value = null
+    }
+    val requestedItem by MainActivity.itemToOpen
+    val habit = requestedItem?.let { id -> journal.items.firstOrNull { it.id == id } }
+
+    BackHandler(enabled = screen != MainActivity.SCREEN_NOW) { screen = MainActivity.SCREEN_NOW }
+    Box(Modifier.fillMaxSize().background(Lume.colors.canvas)) {
+        when (screen) {
+            MainActivity.SCREEN_LISTS -> TasksScreen(onBack = { screen = MainActivity.SCREEN_NOW }, onAdd = openAdd)
+            MainActivity.SCREEN_SETTINGS -> SettingsScreen(onBack = { screen = MainActivity.SCREEN_NOW })
+            else -> NowScreen(
+                onLists = { screen = MainActivity.SCREEN_LISTS },
+                onAdd = openAdd,
+                onSettings = { screen = MainActivity.SCREEN_SETTINGS },
+                onEdit = { editing = it },
+            )
         }
     }
-    if (addChooser.value) AddFlow(onDismiss = { addChooser.value = false })
+    if (addTask.value) {
+        TaskDialog(existing = null, onDismiss = { addTask.value = false }) { title, date, minute, recurrence, alert, listId ->
+            store.addTask(title, date, minute, recurrence, alert, listId)
+            addTask.value = false
+        }
+    }
+    editing?.let { task ->
+        TaskDialog(existing = task, onDismiss = { editing = null }) { title, date, minute, recurrence, alert, listId ->
+            store.editTask(task.id, title, date, minute, recurrence, alert, listId)
+            editing = null
+        }
+    }
+    habit?.let { item ->
+        AddHabitDialog(onDismiss = { MainActivity.itemToOpen.value = null }, existing = item,
+            onRemove = { MainActivity.itemToOpen.value = null; store.pauseItem(item.id) }) { changed ->
+            store.updateItem(changed)
+            MainActivity.itemToOpen.value = null
+        }
+    }
 }

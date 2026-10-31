@@ -11,8 +11,8 @@ android {
         applicationId = "app.kasane"
         minSdk = 26
         targetSdk = 36
-        versionCode = 9
-        versionName = "0.4.1"
+        versionCode = 10
+        versionName = "0.5.0"
         // The Lume core is built for these ABIs by tools/build-core.sh.
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
     }

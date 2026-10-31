@@ -65,6 +65,7 @@ import app.kasane.core.Phase
 import app.kasane.designsystem.LumePalette
 import app.kasane.designsystem.LumeTokens
 import app.kasane.designsystem.LumeType
+import app.kasane.ipc.Companion
 import app.kasane.ipc.Ecosystem
 import app.kasane.ipc.KatachiStatus
 import app.kasane.ipc.RenStatus
@@ -91,7 +92,6 @@ private class HorizonState(
     /** The task list the widget is showing, or null for every list. */
     val listName: String?,
     val phase: Phase,
-    val momentum: Int,
     val list: HorizonList,
     val urgent: Boolean,
     val rulesKept: Int,
@@ -99,7 +99,7 @@ private class HorizonState(
 )
 
 /**
- * The Lume Horizon, in the shape of a task list: the circadian block and momentum on top, a
+ * The Lume Horizon, in the shape of a task list: the circadian block on top, a
  * progress bar for the day, All / Habits / Tasks chips, then Overdue, Today and Upcoming groups
  * with the time each task is due, a checkbox on every tick habit and task, a "tomorrow" snooze on
  * one-off tasks, a Completed group that folds away, and quick launch pills for Ren, Katachi and
@@ -119,8 +119,16 @@ class HorizonWidget : GlanceAppWidget() {
             val ren = async(Dispatchers.IO) { Ecosystem.renStatus(context) }
             val katachi = async(Dispatchers.IO) { Ecosystem.katachiStatus(context) }
             val vow = async(Dispatchers.IO) { Ecosystem.vowStatus(context) }
-            Peers(ren.await(), katachi.await(), vow.await(), Ecosystem.renIntent(context, true),
-                Ecosystem.katachiIntent(context), Ecosystem.sigilIntent(context))
+            val renOn = async(Dispatchers.IO) { Companion.available(context, Ecosystem.REN) }
+            val katachiOn = async(Dispatchers.IO) { Companion.available(context, Ecosystem.KATACHI) }
+            val sigilOn = async(Dispatchers.IO) { Companion.available(context, Ecosystem.SIGIL) }
+            val vowOn = async(Dispatchers.IO) { Companion.available(context, Ecosystem.VOW) }
+            // A companion counts only when installed AND its provider answers.
+            Peers(if (renOn.await()) ren.await() else null, if (katachiOn.await()) katachi.await() else null,
+                if (vowOn.await()) vow.await() else null,
+                Ecosystem.renIntent(context, true).takeIf { renOn.await() },
+                Ecosystem.katachiIntent(context).takeIf { katachiOn.await() },
+                Ecosystem.sigilIntent(context).takeIf { sigilOn.await() })
         }
         val emblem = emblemBitmap(context)
         val first = withContext(Dispatchers.Default) { buildState(context, store.journal.value, store.floorToday(), prefs.filter.value, prefs.list.value) }
@@ -151,13 +159,11 @@ private fun buildState(context: Context, journal: Journal, floor: Boolean, filte
     val now = LocalDateTime.now()
     val today = now.toLocalDate()
     val values = Analysis(journal, today, LumeCore.active).momentum()
-    val momentum = values.map { it.value }.average().takeIf { !it.isNaN() }?.times(100)?.roundToInt() ?: 0
     val rules = journal.items.filter { it.kind == Kind.RULE && it.dueOn(today) }
     return HorizonState(
         listName = when (listFilter) { null -> null; "" -> context.getString(R.string.lists_default)
             else -> journal.lists.firstOrNull { it.id == listFilter }?.name },
         phase = Phase.surfaceOf(now.toLocalTime(), SleepLockStore.active(context)),
-        momentum = momentum,
         list = horizonList(journal, today, now.toLocalTime(), values.associate { it.item.id to it.value }, floor, filter, listFilter),
         urgent = Orchestrator.urgent(journal, now, floor),
         rulesKept = rules.count { it.finishedFor(journal.entry(today, it.id)) },
@@ -184,13 +190,12 @@ private fun HorizonContent(state: HorizonState, filter: HorizonFilter, completed
                 .clickable(actionStartActivity(Intent(context, MainActivity::class.java)
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP))),
         ) {
-            // Top band: block, momentum, then one line of context
+            // Top band: block, then one line of context
             Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Image(ImageProvider(emblem), contentDescription = null, modifier = GlanceModifier.size(20.dp))
                 Spacer(GlanceModifier.width(6.dp))
                 Text(phaseLabel(context, state.phase), style = TextStyle(color = GlanceTheme.colors.primary, fontSize = 12.sp,
                     fontWeight = FontWeight.Medium), modifier = GlanceModifier.defaultWeight())
-                Text(context.getString(R.string.widget_horizon_momentum, state.momentum), style = headlineStyle(14))
             }
             val vow = peers.vow
             val line = if (vow != null)
@@ -337,7 +342,6 @@ private fun openRow(context: Context, taskId: String?, itemId: String?): Intent 
         .apply {
             if (taskId != null) putExtra(MainActivity.EXTRA_TASK_ID, taskId)
             else if (itemId != null) putExtra(MainActivity.EXTRA_ITEM_ID, itemId)
-            putExtra(MainActivity.EXTRA_TAB, if (taskId != null) 3 else 0)
         }
         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
 

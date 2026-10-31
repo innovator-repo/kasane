@@ -29,10 +29,10 @@ object Widgets {
         // A burst of ticks redraws once, a moment after the last one, instead of once per tick.
         scope.launch {
             pings.debounce(60).collect { app ->
-                TodayWidget().updateAll(app)
-                TasksWidget().updateAll(app)
-                AllWidget().updateAll(app)
                 HorizonWidget().updateAll(app)
+                NextUpWidget().updateAll(app)
+                UniversalTodayWidget().updateAll(app)
+                DockWidget().updateAll(app)
             }
         }
     }
@@ -41,18 +41,6 @@ object Widgets {
     fun refresh(context: Context) {
         pings.tryEmit(context.applicationContext)
     }
-}
-
-class TodayWidgetReceiver : GlanceAppWidgetReceiver() {
-    override val glanceAppWidget = TodayWidget()
-}
-
-class TasksWidgetReceiver : GlanceAppWidgetReceiver() {
-    override val glanceAppWidget = TasksWidget()
-}
-
-class AllWidgetReceiver : GlanceAppWidgetReceiver() {
-    override val glanceAppWidget = AllWidget()
 }
 
 internal val ItemIdKey = ActionParameters.Key<String>("item")
