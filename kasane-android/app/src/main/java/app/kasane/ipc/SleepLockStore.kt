@@ -81,6 +81,6 @@ object SleepLockStore {
             .putExtra("on", s.on)
             .putExtra("startHour", s.lock.startMinute / 60).putExtra("startMinute", s.lock.startMinute % 60)
             .putExtra("endHour", s.lock.endMinute / 60).putExtra("endMinute", s.lock.endMinute % 60)
-        runCatching { context.sendBroadcast(intent, Ecosystem.PERMISSION) }
+        runCatching { context.sendBroadcast(LumeTrust.stamp(context, intent)) }
     }
 }

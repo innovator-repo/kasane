@@ -46,7 +46,7 @@ fun LumeCheck(checked: Boolean, onChange: (Boolean) -> Unit, modifier: Modifier 
     val fill by animateColorAsState(if (checked) color else Color.Transparent, LumeMotion.effects(), label = "check")
     val c = Lume.colors
     Box(
-        modifier.sizeIn(minWidth = 44.dp, minHeight = 44.dp)
+        modifier.sizeIn(minWidth = LumeTokens.Control.MinTouch, minHeight = LumeTokens.Control.MinTouch)
             .clickable(role = Role.Checkbox, indication = null,
                 interactionSource = androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() }) {
                 if (!checked) haptics.play(HapticToken.CHECK_COMPLETE) else haptics.tick()
@@ -90,7 +90,7 @@ fun LumeButton(
         else -> c.accent
     }
     Box(
-        modifier.pressable().sizeIn(minHeight = 40.dp, minWidth = 48.dp).clip(RoundedCornerShape(20.dp)).background(bg)
+        modifier.pressable().sizeIn(minHeight = LumeTokens.Control.ButtonHeight, minWidth = LumeTokens.Control.MinTouch).clip(RoundedCornerShape(LumeTokens.Shape.L)).background(bg)
             .clickable(role = Role.Button) { haptics.play(haptic); onClick() }
             .padding(horizontal = 16.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center,
@@ -106,7 +106,7 @@ fun LumeChip(text: String, selected: Boolean, onClick: () -> Unit, modifier: Mod
     val base = tint ?: c.accent
     val bg by animateColorAsState(if (selected) base.copy(alpha = 0.18f) else c.grouped, LumeMotion.effects(), label = "chip")
     Box(
-        modifier.pressable().sizeIn(minHeight = 36.dp).clip(RoundedCornerShape(18.dp)).background(bg)
+        modifier.pressable().sizeIn(minHeight = LumeTokens.Control.ChipHeight).clip(RoundedCornerShape(LumeTokens.Shape.M)).background(bg)
             .clickable(role = Role.Button, onClick = onClick).padding(horizontal = 14.dp, vertical = 6.dp),
         contentAlignment = Alignment.Center,
     ) {
@@ -161,7 +161,7 @@ fun TierPill(value: Int, target: Int, floor: Int, modifier: Modifier = Modifier)
 
 @Composable
 private fun androidx.compose.foundation.layout.RowScope.Segment(weight: Float, fill: Float, color: Color) {
-    Box(Modifier.weight(weight.coerceAtLeast(0.01f)).fillMaxHeight().clip(RoundedCornerShape(3.dp)).background(color.copy(alpha = 0.16f))) {
+    Box(Modifier.weight(weight.coerceAtLeast(0.01f)).fillMaxHeight().clip(RoundedCornerShape(LumeTokens.Shape.XXS)).background(color.copy(alpha = 0.16f))) {
         Box(Modifier.fillMaxHeight().fillMaxWidth(fill).background(color))
     }
 }

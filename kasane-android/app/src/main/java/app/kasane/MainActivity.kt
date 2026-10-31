@@ -42,6 +42,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         tab.intValue = savedInstanceState?.getInt(EXTRA_TAB) ?: intent.getIntExtra(EXTRA_TAB, 0)
         addChooser.value = savedInstanceState == null && wantsAddChooser(intent)
+        if (savedInstanceState == null) readOpenTarget(intent)
         enableEdgeToEdge()
         setContent { KasaneTheme { Kasane(tab, addChooser) } }
     }
@@ -51,6 +52,15 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         if (intent.hasExtra(EXTRA_TAB)) tab.intValue = intent.getIntExtra(EXTRA_TAB, 0)
         if (wantsAddChooser(intent)) addChooser.value = true
+        readOpenTarget(intent)
+    }
+
+    /** A tap on a row in a widget opens that task or habit, as a tap in the Reminder widget opens its detail. */
+    private fun readOpenTarget(intent: Intent) {
+        intent.getStringExtra(EXTRA_TASK_ID)?.let { taskToOpen.value = it; tab.intValue = 3 }
+        intent.getStringExtra(EXTRA_ITEM_ID)?.let { itemToOpen.value = it; tab.intValue = 0 }
+        intent.removeExtra(EXTRA_TASK_ID)
+        intent.removeExtra(EXTRA_ITEM_ID)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -69,6 +79,13 @@ class MainActivity : ComponentActivity() {
     companion object {
         /** Which tab to open on, from a widget: 0 Today, 1 Momentum, 2 Week, 3 Tasks. */
         const val EXTRA_TAB = "tab"
+
+        /** The task or habit a widget row asks to open for editing. */
+        const val EXTRA_TASK_ID = "open_task"
+        const val EXTRA_ITEM_ID = "open_item"
+
+        val taskToOpen = mutableStateOf<String?>(null)
+        val itemToOpen = mutableStateOf<String?>(null)
 
         const val ACTION_ADD_FROM_WIDGET = "app.kasane.action.ADD_FROM_WIDGET"
 

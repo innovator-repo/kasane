@@ -9,7 +9,9 @@ import app.kasane.core.ExceptionState
 import app.kasane.ipc.Ecosystem
 import app.kasane.core.Item
 import app.kasane.core.Journal
+import app.kasane.core.Recurrence
 import app.kasane.core.Task
+import app.kasane.core.TaskList
 import app.kasane.reminders.AlarmScheduler
 import app.kasane.widget.Widgets
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -112,16 +114,47 @@ class Store(private val context: Context) {
         journal.copy(items = journal.items.map { if (it.id == id) it.copy(paused = true) else it })
     }
 
-    /** `repeat` holds days of the week, 1 = Monday; empty for a one-off task on `date`. */
-    fun addTask(title: String, date: LocalDate, remindAt: Int?, repeat: List<Int> = emptyList(), alert: Alert = Alert.MEDIUM) = update {
+    fun addTask(title: String, date: LocalDate, remindAt: Int?, recurrence: Recurrence? = null, alert: Alert = Alert.MEDIUM,
+                listId: String? = null) = update {
         it.copy(tasks = it.tasks + Task(UUID.randomUUID().toString(), title.trim(), date.toString(), remindAt,
-            repeat = repeat.sorted(), alert = alert))
+            recurrence = recurrence, alert = alert, listId = listId))
+    }
+
+    /** Edits a task in place. A change to its date, time or repeat starts the ticks over. */
+    fun editTask(id: String, title: String, date: LocalDate, remindAt: Int?, recurrence: Recurrence?, alert: Alert,
+                 listId: String? = null) = update { journal ->
+        journal.copy(tasks = journal.tasks.map { old ->
+            if (old.id != id) old else {
+                val sameSchedule = old.date == date.toString() && old.remindAt == remindAt && old.rule == recurrence
+                old.copy(title = title.trim(), date = date.toString(), remindAt = remindAt, repeat = emptyList(), recurrence = recurrence,
+                    alert = alert, listId = listId, doneThrough = if (sameSchedule) old.doneThrough else null, done = if (sameSchedule) old.done else false)
+            }
+        })
     }
 
     /** For a repeating task this ticks off only the next occurrence. */
     fun setTaskDone(id: String, done: Boolean) = update { journal ->
         val today = LocalDate.now()
         journal.copy(tasks = journal.tasks.map { if (it.id == id) it.finish(today, done) else it })
+    }
+
+    /** Makes a list for tasks and returns its id. */
+    fun addList(name: String): String {
+        val id = UUID.randomUUID().toString()
+        update { it.copy(lists = it.lists + TaskList(id, name.trim())) }
+        return id
+    }
+
+    /** Removes a list; its tasks move to the default list rather than being lost. */
+    fun deleteList(id: String) = update { journal ->
+        journal.copy(lists = journal.lists.filterNot { it.id == id },
+            tasks = journal.tasks.map { if (it.listId == id) it.copy(listId = null) else it })
+    }
+
+    /** Pushes a one-off task to tomorrow, like snoozing it. Repeating tasks keep their own schedule. */
+    fun snoozeTask(id: String) = update { journal ->
+        val tomorrow = LocalDate.now().plusDays(1).toString()
+        journal.copy(tasks = journal.tasks.map { if (it.id == id && !it.repeats && !it.done) it.copy(date = tomorrow) else it })
     }
 
     fun deleteTask(id: String) = update { journal -> journal.copy(tasks = journal.tasks.filterNot { it.id == id }) }

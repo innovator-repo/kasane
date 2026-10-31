@@ -1,5 +1,6 @@
 package app.kasane.ui
 
+import app.kasane.designsystem.LumeTokens
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -74,7 +75,7 @@ fun NowRitualCard(
     onChange: (Entry) -> Unit,
 ) {
     val c = Lume.colors
-    val shape = RoundedCornerShape(20.dp)
+    val shape = RoundedCornerShape(LumeTokens.Shape.L)
     Box(
         Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp).fillMaxWidth()
             .shadow(if (c.dark) 0.dp else 8.dp, shape, ambientColor = c.accent.copy(alpha = 0.25f), spotColor = c.accent.copy(alpha = 0.25f))

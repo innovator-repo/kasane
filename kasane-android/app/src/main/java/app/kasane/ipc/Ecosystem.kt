@@ -16,12 +16,10 @@ data class VowStatus(val reclaimedMinutes: Int, val rulesKept: Int, val rulesTot
 data class KatachiStatus(val solved: Int, val target: Int, val doneToday: Boolean)
 
 /**
- * Kasane's side of the Lume on-device bus. Every call is explicit (one package), guarded by the
- * signature permission, and does nothing when the other app is not installed. No network.
+ * Kasane's side of the Lume on-device bus. Every call is explicit (one package), stamped with proof
+ * that Kasane sent it (LumeTrust), and does nothing when the other app is not installed. No network.
  */
 object Ecosystem {
-    const val PERMISSION = "app.lume.permission.ECOSYSTEM_SYNC"
-
     const val REN = "app.ren.japanese"
     const val KATACHI = "app.katachi"
     const val VOW = "com.vow.app"
@@ -51,7 +49,7 @@ object Ecosystem {
         for (pkg in listOf(REN, KATACHI)) {
             if (!installed(context, pkg)) continue
             val intent = Intent(ACTION_FLOOR_MODE).setPackage(pkg).putExtra("on", on)
-            runCatching { context.sendBroadcast(intent, PERMISSION) }
+            runCatching { context.sendBroadcast(LumeTrust.stamp(context, intent)) }
         }
     }
 

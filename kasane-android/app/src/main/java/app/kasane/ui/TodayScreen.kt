@@ -69,6 +69,13 @@ fun TodayScreen(modifier: Modifier = Modifier, onAdd: () -> Unit = {}) {
     val counted = due.count { it.finishedFor(journal.entry(today, it.id), floor) }
 
     var editing by remember { mutableStateOf<Item?>(null) }
+    // A habit tapped in the widget opens its edit form straight away.
+    val requested by app.kasane.MainActivity.itemToOpen
+    androidx.compose.runtime.LaunchedEffect(requested, journal.items) {
+        val id = requested ?: return@LaunchedEffect
+        journal.items.firstOrNull { it.id == id }?.let { editing = it }
+        app.kasane.MainActivity.itemToOpen.value = null
+    }
     var removing by remember { mutableStateOf<Item?>(null) }
     var filter by remember { mutableStateOf(Filter.ALL) }
     var showCompleted by remember { mutableStateOf(false) }
@@ -79,7 +86,14 @@ fun TodayScreen(modifier: Modifier = Modifier, onAdd: () -> Unit = {}) {
     // Finished items leave Today at once; "Show completed" brings them back to undo.
     val pending = due.filter { !it.finishedFor(journal.entry(today, it.id), floor) }
     val finished = due - pending.toSet()
-    val tasksToday = journal.tasks.filter { it.dueOn(today) && !it.doneOn(today) }
+    var listFilter by remember { mutableStateOf<String?>(null) }   // null = every list
+    var listMenu by remember { mutableStateOf(false) }
+    fun inList(t: app.kasane.core.Task) = listFilter == null || (if (listFilter == "") t.listId == null else t.listId == listFilter)
+    val openTasks = journal.tasks.filter { it.dueOn(today) && !it.doneOn(today) && inList(it) }
+        .sortedWith(compareBy<app.kasane.core.Task> { it.nextDate(today) ?: today }.thenBy { it.remindAt ?: -1 })
+    // Samsung Reminder order: what is overdue first, then today by time with untimed ones ahead.
+    val overdueTasks = openTasks.filter { (it.nextDate(today) ?: today).isBefore(today) }
+    val tasksToday = openTasks - overdueTasks.toSet()
     val tomorrowItems = journal.items.filter { it.dueOn(tomorrow) }
     val tomorrowTasks = journal.tasks.filter {
         if (it.repeats) it.dueOn(tomorrow) else it.open && it.date == tomorrow.toString()
@@ -110,12 +124,33 @@ fun TodayScreen(modifier: Modifier = Modifier, onAdd: () -> Unit = {}) {
             item(key = "filters") {
                 Row(Modifier.padding(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Filter.entries.forEach { LumeChip(stringResource(it.label), filter == it, { filter = it }) }
+                    if (journal.lists.isNotEmpty()) Box {
+                        LumeChip(journal.lists.firstOrNull { it.id == listFilter }?.name
+                            ?: stringResource(if (listFilter == "") R.string.lists_default else R.string.lists_chip),
+                            listFilter != null, { listMenu = true })
+                        androidx.compose.material3.DropdownMenu(expanded = listMenu, onDismissRequest = { listMenu = false }) {
+                            androidx.compose.material3.DropdownMenuItem(text = { Text(stringResource(R.string.filter_all)) },
+                                onClick = { listFilter = null; listMenu = false })
+                            androidx.compose.material3.DropdownMenuItem(text = { Text(stringResource(R.string.lists_default)) },
+                                onClick = { listFilter = ""; listMenu = false })
+                            journal.lists.forEach { l ->
+                                androidx.compose.material3.DropdownMenuItem(text = { Text(l.name) },
+                                    onClick = { listFilter = l.id; listMenu = false })
+                            }
+                        }
+                    }
                 }
             }
             if (journal.items.isEmpty() && journal.tasks.isEmpty()) {
                 item { EmptyNote(R.string.today_nothing, R.string.today_nothing_hint) }
-            } else if (pending.isEmpty() && tasksToday.isEmpty() && due.isNotEmpty() && filter == Filter.ALL) {
+            } else if (pending.isEmpty() && tasksToday.isEmpty() && overdueTasks.isEmpty() && due.isNotEmpty() && filter == Filter.ALL) {
                 item { EmptyNote(R.string.today_all_done, R.string.habit_hint) }
+            }
+            if (showTasks && overdueTasks.isNotEmpty()) {
+                item(key = "h-overdue") { SectionLabel(stringResource(R.string.widget_overdue)) }
+                item(key = "overdue") {
+                    GroupedList(overdueTasks) { task -> TaskRow(task) { store.setTaskDone(task.id, true) } }
+                }
             }
             if (showTasks && tasksToday.isNotEmpty()) {
                 item(key = "h-tasks") { SectionLabel(stringResource(R.string.today_tasks)) }

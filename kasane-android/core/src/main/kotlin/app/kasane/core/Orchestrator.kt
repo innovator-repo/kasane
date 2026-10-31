@@ -109,17 +109,29 @@ object NowPick {
         time: LocalTime,
         momentum: Map<String, Double> = emptyMap(),
         floorMode: Boolean = false,
-    ): Item? {
+    ): Item? = queue(journal, date, time, momentum, floorMode).firstOrNull()
+
+    /**
+     * Every open habit in the order to do it: the current block first, each block ordered by
+     * the reminder nearest the clock then by lowest momentum, then the other blocks in the
+     * same order. Finished habits are not included, so they drop out of the list.
+     */
+    fun queue(
+        journal: Journal,
+        date: LocalDate,
+        time: LocalTime,
+        momentum: Map<String, Double> = emptyMap(),
+        floorMode: Boolean = false,
+    ): List<Item> {
         val open = journal.items.filter {
             it.kind != Kind.RULE && it.dueOn(date) && !it.finishedFor(journal.entry(date, it.id), floorMode)
         }
         val block = Phase.of(time).block
-        val pool = open.filter { it.block == block }.ifEmpty { open }
         val now = time.hour * 60 + time.minute
-        return pool.sortedWith(
-            compareBy<Item> { it.remindAt?.let { r -> kotlin.math.abs(r - now) } ?: Int.MAX_VALUE }
-                .thenBy { momentum[it.id] ?: 0.0 },
-        ).firstOrNull()
+        val order = compareBy<Item> { it.remindAt?.let { r -> kotlin.math.abs(r - now) } ?: Int.MAX_VALUE }
+            .thenBy { momentum[it.id] ?: 0.0 }
+        val (here, later) = open.partition { it.block == block }
+        return here.sortedWith(order) + later.sortedWith(order)
     }
 }
 

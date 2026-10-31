@@ -17,12 +17,13 @@ import kotlin.math.roundToInt
 /**
  * `content://app.kasane.provider/status`, read-only, one row:
  * momentum 0..100, the open block, and today's rules kept of total.
- * Guarded by the signature permission in the manifest.
+ * Only the Lume apps may read it (LumeTrust).
  */
 class KasaneStatusProvider : ContentProvider() {
     override fun onCreate() = true
 
     override fun query(uri: Uri, projection: Array<out String>?, selection: String?, args: Array<out String>?, sort: String?): Cursor? {
+        if (!LumeTrust.isPeerCaller(callingPackage)) return null
         if (uri.path != "/status") return null
         val context = context ?: return null
         val journal = context.store.journal.value

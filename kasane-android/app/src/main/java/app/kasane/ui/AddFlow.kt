@@ -1,6 +1,8 @@
 package app.kasane.ui
 
+import app.kasane.designsystem.LumeTokens
 import androidx.compose.foundation.clickable
+import app.kasane.designsystem.pressable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -52,8 +54,8 @@ fun AddFlow(onDismiss: () -> Unit) {
             store.addItem(it)
             onDismiss()
         }
-        AddType.TASK -> AddTaskDialog(onDismiss = onDismiss) { title, date, minute, repeat, alert ->
-            store.addTask(title, date, minute, repeat, alert)
+        AddType.TASK -> TaskDialog(existing = null, onDismiss = onDismiss) { title, date, minute, recurrence, alert, listId ->
+            store.addTask(title, date, minute, recurrence, alert, listId)
             onDismiss()
         }
     }
@@ -62,7 +64,7 @@ fun AddFlow(onDismiss: () -> Unit) {
 @Composable
 fun AddTypeSelectorDialog(onDismiss: () -> Unit, onSelect: (AddType) -> Unit) {
     Dialog(onDismissRequest = onDismiss) {
-        Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface, tonalElevation = 6.dp) {
+        Surface(shape = RoundedCornerShape(LumeTokens.Shape.L), color = MaterialTheme.colorScheme.surface, tonalElevation = 6.dp) {
             Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(stringResource(R.string.add_what), style = MaterialTheme.typography.titleLarge)
                 Text(stringResource(R.string.add_what_hint), style = MaterialTheme.typography.bodyMedium,
@@ -79,9 +81,9 @@ fun AddTypeSelectorDialog(onDismiss: () -> Unit, onSelect: (AddType) -> Unit) {
 @Composable
 private fun TypeOption(type: AddType, onClick: () -> Unit) {
     Surface(
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(LumeTokens.Shape.M),
         color = MaterialTheme.colorScheme.surfaceVariant,
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).clickable(onClick = onClick),
+        modifier = Modifier.fillMaxWidth().pressable().clip(RoundedCornerShape(LumeTokens.Shape.M)).clickable(onClick = onClick),
     ) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
@@ -97,7 +99,7 @@ private fun TypeOption(type: AddType, onClick: () -> Unit) {
 /** A small tinted label such as HABIT, TASK or RULE. */
 @Composable
 fun KindBadge(text: String) {
-    Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)) {
+    Surface(shape = RoundedCornerShape(LumeTokens.Shape.XS), color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)) {
         Text(text, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
     }

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Only apps signed with the same key hold this, so only they can log into or read Kasane. -->
-    <permission android:name="app.lume.permission.ECOSYSTEM_SYNC" android:protectionLevel="signature" />
-    <uses-permission android:name="app.lume.permission.ECOSYSTEM_SYNC" />
+    <!-- Lume ecosystem. No shared permission: a permission that two apps declare blocks the second install
+         when their keys differ. Each exported entry point below checks instead that the caller is one of
+         the Lume apps (LumeTrust), so the apps install in any order and talk whatever key signs them. -->
 
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -24,8 +24,8 @@
     <application
         android:name=".KasaneApp"
         android:allowBackup="true"
-        android:icon="@drawable/ic_launcher"
-        android:roundIcon="@drawable/ic_launcher"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.Kasane">
@@ -52,39 +52,34 @@
                 <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
             </intent-filter>
         </receiver>
-        <!-- The other Lume apps report in. Each entry point needs the signature permission. -->
-        <receiver android:name=".PuzzleCountReceiver" android:exported="true"
-            android:permission="app.lume.permission.ECOSYSTEM_SYNC">
+        <!-- The other Lume apps report in. Each entry point checks the sender is a Lume app (LumeTrust). -->
+        <receiver android:name=".PuzzleCountReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="app.kasane.action.LOG_COUNT" />
             </intent-filter>
         </receiver>
-        <receiver android:name=".ipc.LogCheckReceiver" android:exported="true"
-            android:permission="app.lume.permission.ECOSYSTEM_SYNC">
+        <receiver android:name=".ipc.LogCheckReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="app.kasane.action.LOG_CHECK" />
             </intent-filter>
         </receiver>
-        <receiver android:name=".ipc.EcoMetricsReceiver" android:exported="true"
-            android:permission="app.lume.permission.ECOSYSTEM_SYNC">
+        <receiver android:name=".ipc.EcoMetricsReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="app.kasane.action.ECO_METRICS" />
             </intent-filter>
         </receiver>
-        <receiver android:name=".ipc.RuleEventReceiver" android:exported="true"
-            android:permission="app.lume.permission.ECOSYSTEM_SYNC">
+        <receiver android:name=".ipc.RuleEventReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="app.lume.action.RULE_EVENT" />
             </intent-filter>
         </receiver>
-        <receiver android:name=".ipc.SleepLockSyncReceiver" android:exported="true"
-            android:permission="app.lume.permission.ECOSYSTEM_SYNC">
+        <receiver android:name=".ipc.SleepLockSyncReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="app.lume.action.SLEEP_LOCK_SYNC" />
             </intent-filter>
         </receiver>
         <provider android:name=".ipc.KasaneStatusProvider" android:authorities="app.kasane.provider"
-            android:exported="true" android:readPermission="app.lume.permission.ECOSYSTEM_SYNC" />
+            android:exported="true" />
 
         <receiver android:name=".reminders.NotificationActionReceiver" android:exported="false" />
 

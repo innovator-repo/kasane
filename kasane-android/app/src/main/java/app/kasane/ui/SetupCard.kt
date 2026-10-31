@@ -1,5 +1,6 @@
 package app.kasane.ui
 
+import app.kasane.designsystem.LumeTokens
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AlarmManager
@@ -78,7 +79,7 @@ fun SetupCard() {
         Modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 8.dp)
-            .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(LumeTokens.Shape.M))
             .padding(16.dp),
     ) {
         Text(stringResource(R.string.setup_title), style = MaterialTheme.typography.titleMedium,

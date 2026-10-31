@@ -11,8 +11,8 @@ android {
         applicationId = "app.kasane"
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
-        versionName = "0.1.0"
+        versionCode = 9
+        versionName = "0.4.1"
         // The Lume core is built for these ABIs by tools/build-core.sh.
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
     }
@@ -25,6 +25,17 @@ android {
             keyAlias = "androiddebugkey"
             keyPassword = "android"
         }
+        // The release key every app shares (see the signing-keys branch), from KASANE_* variables.
+        val keystorePath = System.getenv("KASANE_KEYSTORE")
+        val keystorePassword = System.getenv("KASANE_KEYSTORE_PASSWORD")
+        if (!keystorePath.isNullOrBlank() && !keystorePassword.isNullOrBlank()) {
+            create("release") {
+                storeFile = file(keystorePath)
+                storePassword = keystorePassword
+                keyAlias = System.getenv("KASANE_KEY_ALIAS") ?: "sigil"
+                keyPassword = System.getenv("KASANE_KEY_PASSWORD") ?: keystorePassword
+            }
+        }
     }
 
     buildTypes {
@@ -32,8 +43,16 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // Signed with the debug key until a release key is set up.
-            signingConfig = signingConfigs.getByName("debug")
+            // Without the release key (CI), fall back to the debug key so the APK still installs for testing.
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
+        }
+        // The same app and key as release, without R8 or resource shrinking: roughly twice as fast to build,
+        // a larger file. It installs over the release build and keeps its data. For your own phone.
+        create("personal") {
+            initWith(getByName("release"))
+            isMinifyEnabled = false
+            isShrinkResources = false
+            matchingFallbacks += "release"
         }
     }
 

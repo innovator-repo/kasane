@@ -3,6 +3,8 @@ package app.kasane.core
 import kotlinx.serialization.Serializable
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 
 /** How an item is logged, which decides its tier for the day. */
 @Serializable
@@ -135,6 +137,25 @@ data class Entry(
     }
 }
 
+/** A named group of tasks, such as Work or Exams. */
+@Serializable
+data class TaskList(val id: String, val name: String)
+
+/** The time groups a task falls into, in the order Samsung Reminder lists them. */
+enum class TaskBucket {
+    OVERDUE, TODAY, TOMORROW, WEEK, LATER;
+
+    companion object {
+        fun of(date: LocalDate, today: LocalDate): TaskBucket = when {
+            date.isBefore(today) -> OVERDUE
+            date == today -> TODAY
+            date == today.plusDays(1) -> TOMORROW
+            date.isBefore(today.plusDays(7)) -> WEEK
+            else -> LATER
+        }
+    }
+}
+
 /** A task on a date, such as an exam, or one that repeats on chosen days of the week. */
 @Serializable
 data class Task(
@@ -145,38 +166,73 @@ data class Task(
     /** Minutes after midnight for the reminder, or null for none. */
     val remindAt: Int? = null,
     val done: Boolean = false,
-    /** Days of the week it repeats on, 1 = Monday to 7 = Sunday. Empty for a one-off task. */
+    /** Days of the week it repeats on, 1 = Monday to 7 = Sunday. Only for tasks saved before [recurrence] existed. */
     val repeat: List<Int> = emptyList(),
     /** For a repeating task, the ISO date of the latest occurrence ticked off. */
     val doneThrough: String? = null,
     /** How the reminder sounds. */
     val alert: Alert = Alert.MEDIUM,
+    /** How it repeats, or null for a one-off task. */
+    val recurrence: Recurrence? = null,
+    /** The list it belongs to, or null for the default list. */
+    val listId: String? = null,
 ) {
-    val repeats: Boolean get() = repeat.isNotEmpty()
+    /** The repeat in force: the stored one, or the old weekday list read as weekly. */
+    val rule: Recurrence? get() = recurrence ?: if (repeat.isEmpty()) null else Recurrence.weekly(repeat)
 
-    /** Whether it still belongs in the open list. A repeating task never runs out. */
-    val open: Boolean get() = repeats || !done
+    val repeats: Boolean get() = rule != null
+
+    /** Whether it still belongs in the open list. A repeating task stays until its repeat ends. */
+    val open: Boolean get() = if (repeats) !ended else !done
+
+    private val startDate: LocalDate? get() = runCatching { LocalDate.parse(date) }.getOrNull()
+
+    private val firstAt: LocalDateTime?
+        get() = startDate?.let { LocalDateTime.of(it, LocalTime.of((remindAt ?: 0) / 60, (remindAt ?: 0) % 60)) }
+
+    private val tickedDate: LocalDate? get() = doneThrough?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+
+    /** A repeat with an end whose last occurrence has been ticked off. */
+    val ended: Boolean get() {
+        val r = rule ?: return false
+        val first = firstAt ?: return false
+        val ticked = tickedDate ?: return false
+        return r.end != RepeatEnd.FOREVER && r.firstAtOrAfter(first, ticked.plusDays(1).atStartOfDay()) == null
+    }
 
     /** Ticked off for today, or for good if it is a one-off. */
     fun doneOn(today: LocalDate): Boolean = if (repeats) doneThrough == today.toString() else done
 
     /**
      * The date it is next due: a one-off task's own date, or a repeating task's
-     * first chosen day from today that has not been ticked off. Missed days do not pile up.
+     * first occurrence from today that has not been ticked off. Missed days do not pile up.
      */
     fun nextDate(today: LocalDate): LocalDate? {
-        val start = runCatching { LocalDate.parse(date) }.getOrNull() ?: return null
-        if (!repeats) return start
+        val start = startDate ?: return null
+        val r = rule ?: return start
         var from = maxOf(today, start)
-        val ticked = doneThrough?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+        val ticked = tickedDate
         if (ticked != null && !ticked.isBefore(from)) from = ticked.plusDays(1)
-        return (0L..6L).map { from.plusDays(it) }.firstOrNull { it.dayOfWeek.value in repeat }
+        return r.firstAtOrAfter(firstAt ?: return null, from.atStartOfDay())?.toLocalDate()
     }
 
-    /** Whether it belongs on `date`'s list: a one-off on its day (or overdue), a repeating one on its next chosen day. */
+    /** The next occurrence strictly after `after`, skipping days already ticked off. Null for a one-off or when it has ended. */
+    fun nextOccurrence(after: LocalDateTime): LocalDateTime? {
+        val r = rule ?: return null
+        val first = firstAt ?: return null
+        val ticked = tickedDate
+        var from = after.plusMinutes(1).withSecond(0).withNano(0)
+        if (ticked != null && !ticked.isBefore(from.toLocalDate())) from = ticked.plusDays(1).atStartOfDay()
+        return r.firstAtOrAfter(first, from)
+    }
+
+    /** Whether it belongs on `date`'s list: a one-off on its day (or overdue), a repeating one on an occurrence day. */
     fun dueOn(date: LocalDate): Boolean {
-        if (!repeats) return open && runCatching { !LocalDate.parse(this.date).isAfter(date) }.getOrDefault(false)
-        return date.dayOfWeek.value in repeat && !runCatching { LocalDate.parse(this.date).isAfter(date) }.getOrDefault(false)
+        val r = rule
+        if (r == null) return open && startDate?.let { !it.isAfter(date) } == true
+        val first = firstAt ?: return false
+        if (first.toLocalDate().isAfter(date)) return false
+        return r.firstAtOrAfter(first, date.atStartOfDay())?.toLocalDate() == date
     }
 
     /** Ticks it off, or back on. For a repeating task that is the next occurrence only. */
@@ -194,6 +250,8 @@ data class Journal(
     val items: List<Item> = emptyList(),
     val days: Map<String, Map<String, Entry>> = emptyMap(),
     val tasks: List<Task> = emptyList(),
+    /** Named lists that group tasks, as in a task manager. Tasks with no list sit in the default one. */
+    val lists: List<TaskList> = emptyList(),
 ) {
     fun entry(date: LocalDate, itemId: String): Entry =
         days[date.toString()]?.get(itemId) ?: Entry()

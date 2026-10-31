@@ -1,19 +1,42 @@
 name: Kasane APK
 
+# Every push to the Kasane branches builds a fast APK (no R8) signed with the shared key and attaches it to the
+# "kasane-latest" release, so the download link never changes. Run it by hand with "release" ticked for the full
+# minified build and the core tests.
 on:
   push:
-    branches: [clean/kasane]
+    branches: [clean/kasane, claude/awesome-planck-qerygs]
     paths: ["kasane-android/**", ".github/workflows/kasane-apk.yml"]
   workflow_dispatch:
+    inputs:
+      release:
+        description: "Full minified release build, with the core tests"
+        type: boolean
+        default: false
+
+concurrency:
+  group: kasane-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: kasane-android
+    env:
+      FULL: ${{ inputs.release == true }}
     steps:
       - uses: actions/checkout@v4
+      # The shared release key lives on its own branch of this private repository.
+      - uses: actions/checkout@v4
+        with:
+          ref: signing-keys
+          path: keys
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -24,11 +47,35 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.14.3"
+          # Branch builds read the cache but never wrote it, so every run started cold.
+          cache-read-only: false
       # The Lume core libraries are committed in app/src/main/jniLibs, so no NDK is needed here.
-      - run: gradle -PcoreOnly :core:test
-      - run: gradle :app:assembleRelease
-      - run: mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/Kasane-0.1.0.apk
+      - name: Core tests (full builds only)
+        if: env.FULL == 'true'
+        run: gradle -PcoreOnly :core:test
+      - name: Build and sign with the shared release key
+        run: |
+          export KASANE_KEYSTORE="$GITHUB_WORKSPACE/keys/release.jks"
+          export KASANE_KEYSTORE_PASSWORD="$(cat "$GITHUB_WORKSPACE/keys/password.txt")"
+          echo "::add-mask::$KASANE_KEYSTORE_PASSWORD"
+          if [ "$FULL" = "true" ]; then echo "VARIANT=release" >> "$GITHUB_ENV"; gradle :app:assembleRelease
+          else echo "VARIANT=personal" >> "$GITHUB_ENV"; gradle :app:assemblePersonal; fi
+      - name: Check the signature is the shared key
+        run: |
+          APKSIGNER="$(ls "$ANDROID_HOME"/build-tools/*/apksigner | tail -1)"
+          APK="$(ls app/build/outputs/apk/$VARIANT/*.apk | head -1)"
+          "$APKSIGNER" verify --print-certs "$APK" | tee cert.txt
+          grep -qi 'a906ada6970a00355b816a72057c3bc7563b041ab9d5c2f93c1ca5fbc744ed66' cert.txt
+          VERSION="$(grep -o 'versionName = "[^"]*"' app/build.gradle.kts | cut -d'"' -f2)"
+          mkdir -p out && cp "$APK" "out/Kasane-$VERSION-$VARIANT.apk"
       - uses: actions/upload-artifact@v4
         with:
-          name: Kasane-0.1.0
-          path: kasane-android/app/build/outputs/apk/release/Kasane-0.1.0.apk
+          name: Kasane-signed
+          path: kasane-android/out/*.apk
+      - name: Publish to the kasane-latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view kasane-latest >/dev/null 2>&1 || gh release create kasane-latest --prerelease \
+            --title "Kasane latest build" --notes "Newest signed build. The file name says the version and the build kind."
+          gh release upload kasane-latest out/*.apk --clobber

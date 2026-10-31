@@ -208,4 +208,26 @@ class CoreTest {
         assertEquals("diary", lead.first().item.id)
         assertTrue(lead.first().lift > 0.9)
     }
+
+    @Test fun taskBucketsFollowTheReminderOrder() {
+        val today = java.time.LocalDate.of(2026, 10, 24)
+        fun b(d: String) = TaskBucket.of(java.time.LocalDate.parse(d), today)
+        assertEquals(TaskBucket.OVERDUE, b("2026-10-23"))
+        assertEquals(TaskBucket.TODAY, b("2026-10-24"))
+        assertEquals(TaskBucket.TOMORROW, b("2026-10-25"))
+        assertEquals(TaskBucket.WEEK, b("2026-10-30"))
+        assertEquals(TaskBucket.LATER, b("2026-10-31"))
+    }
+
+    @Test fun anOldJournalWithoutListsStillLoads() {
+        val old = """{"items":[],"days":{},"tasks":[{"id":"t","title":"Call","date":"2026-10-24"}]}"""
+        val journal = Codec.decode(old)
+        assertEquals(1, journal.tasks.size)
+        assertEquals(null, journal.tasks[0].listId)
+        assertEquals(0, journal.lists.size)
+        val round = Codec.decode(Codec.encode(journal.copy(lists = listOf(TaskList("l", "Work")),
+            tasks = journal.tasks.map { it.copy(listId = "l") })))
+        assertEquals("l", round.tasks[0].listId)
+        assertEquals("Work", round.lists[0].name)
+    }
 }

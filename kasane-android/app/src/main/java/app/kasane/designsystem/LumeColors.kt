@@ -42,27 +42,30 @@ class LumeColors(
     val dark: Boolean,
 )
 
+/** Kasane's names for the shared [LumeTokens]. */
 object LumePalette {
-    val SumiIndigo = Color(0xFF3D4FB8)
-    val SumiIndigoDark = Color(0xFF8C9EFF)
-    val SageLight = Color(0xFF2E9E6B)
-    val SageDark = Color(0xFF30D158)
-    val OchreLight = Color(0xFFD9822B)
-    val OchreDark = Color(0xFFFFD60A)
-    val SlateBlue = Color(0xFF5E7CE2)
-    val Terracotta = Color(0xFFC95B3C)
-    val SealLight = Color(0xFF5856D6)
-    val SealDark = Color(0xFF8E8BFF)
-    val AmberLight = Color(0xFFD97706)
-    val AmberDark = Color(0xFFFF9F0A)
-    /** The border tint when Ren or Duolingo is still open after 21:00. */
-    val Urgent = Color(0xFFFF9500)
+    val SumiIndigo = LumeTokens.Accent.KasaneSumi
+    val SumiIndigoDark = LumeTokens.Accent.KasaneSumiDark
+    val SageLight = LumeTokens.Semantic.Sage
+    val SageDark = LumeTokens.Semantic.SageDark
+    val OchreLight = LumeTokens.Semantic.Ochre
+    val OchreDark = LumeTokens.Semantic.OchreDark
+    val SlateBlue = LumeTokens.Semantic.Info
+    val SlateBlueDark = LumeTokens.Semantic.InfoDark
+    val Terracotta = LumeTokens.Semantic.Terracotta
+    val TerracottaDark = LumeTokens.Semantic.TerracottaDark
+    val SealLight = LumeTokens.Semantic.Seal
+    val SealDark = LumeTokens.Semantic.SealDark
+    val AmberLight = LumeTokens.Semantic.Amber
+    val AmberDark = LumeTokens.Semantic.AmberDark
+    /** The border tint when Ren or Duolingo is still open after 21:00, on the always-dark evening page. */
+    val Urgent = LumeTokens.Semantic.AmberDark
 
-    val Washi = Color(0xFFFAF9F6)
-    val Paper = Color(0xFFFFFFFF)
-    val DayDark = Color(0xFF1C1C1E)
-    val WarmGraphite = Color(0xFF181715)
-    val Obsidian = Color(0xFF0B0F14)
+    val Washi = LumeTokens.Neutral.Washi
+    val Paper = LumeTokens.Neutral.Paper
+    val DayDark = LumeTokens.Neutral.DayDark
+    val WarmGraphite = LumeTokens.Neutral.WarmGraphite
+    val Obsidian = LumeTokens.Neutral.Obsidian
 }
 
 /**
@@ -79,28 +82,29 @@ fun lumeColors(phase: Phase, systemDark: Boolean): LumeColors {
         Phase.SANCTUARY -> LumePalette.Obsidian
     }
     val grouped = when {
-        phase == Phase.SANCTUARY -> Color(0xFF141A22)
-        phase == Phase.EVENING -> Color(0xFF23211E)
-        dark -> Color(0xFF252527)
-        else -> Color(0xFFF4F4F6)
+        phase == Phase.SANCTUARY -> LumeTokens.Neutral.ObsidianGrouped
+        phase == Phase.EVENING -> LumeTokens.Neutral.WarmGraphiteGrouped
+        dark -> LumeTokens.Neutral.DayDarkGrouped
+        phase == Phase.MORNING -> LumeTokens.Neutral.WashiGrouped
+        else -> LumeTokens.Neutral.PaperGrouped
     }
     return if (dark) LumeColors(
         accent = LumePalette.SumiIndigoDark,
-        onAccent = Color(0xFF0E1652),
+        onAccent = LumeTokens.Neutral.OnLightAccent,
         accentContainer = Color(0xFF26316F),
         onAccentContainer = Color(0xFFE4E8FF),
         canvas = canvas,
         grouped = grouped,
-        hairline = Color(0x1FFFFFFF),
-        text = Color(0xFFE8E9ED),
-        textSecondary = Color(0xFFA3A7B3),
-        floor = LumePalette.SlateBlue,
+        hairline = LumeTokens.Neutral.HairlineDark,
+        text = LumeTokens.Neutral.InkDark,
+        textSecondary = LumeTokens.Neutral.InkDarkSecondary,
+        floor = LumePalette.SlateBlueDark,
         target = LumePalette.SageDark,
         stretch = LumePalette.OchreDark,
-        slip = LumePalette.Terracotta,
+        slip = LumePalette.TerracottaDark,
         seal = LumePalette.SealDark,
         caution = LumePalette.AmberDark,
-        error = Color(0xFFF2B8B5),
+        error = LumeTokens.Semantic.DestructiveDark,
         dark = true,
     ) else LumeColors(
         accent = LumePalette.SumiIndigo,
@@ -109,16 +113,16 @@ fun lumeColors(phase: Phase, systemDark: Boolean): LumeColors {
         onAccentContainer = Color(0xFF14205E),
         canvas = canvas,
         grouped = grouped,
-        hairline = Color(0x243C3C43),
-        text = Color(0xFF15161A),
-        textSecondary = Color(0xFF5B5F6B),
+        hairline = LumeTokens.Neutral.HairlineLight,
+        text = LumeTokens.Neutral.InkLight,
+        textSecondary = LumeTokens.Neutral.InkLightSecondary,
         floor = LumePalette.SlateBlue,
         target = LumePalette.SageLight,
         stretch = LumePalette.OchreLight,
         slip = LumePalette.Terracotta,
         seal = LumePalette.SealLight,
         caution = LumePalette.AmberLight,
-        error = Color(0xFFB3261E),
+        error = LumeTokens.Semantic.Destructive,
         dark = false,
     )
 }

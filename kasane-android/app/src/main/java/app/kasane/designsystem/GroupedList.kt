@@ -30,7 +30,7 @@ fun <T> GroupedList(
     val c = Lume.colors
     Column(
         modifier.padding(horizontal = 16.dp).fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp)).background(c.grouped),
+            .clip(RoundedCornerShape(LumeTokens.Shape.M)).background(c.grouped),
     ) {
         items.forEachIndexed { index, item ->
             row(item)

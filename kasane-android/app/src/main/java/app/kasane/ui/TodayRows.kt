@@ -1,5 +1,6 @@
 package app.kasane.ui
 
+import app.kasane.designsystem.LumeTokens
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -50,7 +51,7 @@ import app.kasane.store
 
 @Composable
 private fun Detail(text: String, color: Color = Lume.colors.textSecondary) {
-    Text(text, color = color, fontSize = 13.sp)
+    Text(text, color = color, fontSize = LumeTokens.Type.Footnote)
 }
 
 /** One habit or rule inside a grouped list. Long press edits or removes it. */
@@ -81,7 +82,7 @@ fun HabitRow(item: Item, entry: Entry, floorMode: Boolean, onEdit: () -> Unit, o
                     })
             }
             Column(Modifier.weight(1f).padding(end = 8.dp)) {
-                Text(item.title, color = if (finished && item.kind != Kind.RULE) c.textSecondary else c.text, fontSize = 16.sp,
+                Text(item.title, color = if (finished && item.kind != Kind.RULE) c.textSecondary else c.text, fontSize = LumeTokens.Type.Body,
                     fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 when (item.kind) {
                     Kind.COUNT -> Detail(stringResource(R.string.count_of, entry.count, item.target))
@@ -112,7 +113,7 @@ fun HabitRow(item: Item, entry: Entry, floorMode: Boolean, onEdit: () -> Unit, o
             Column(Modifier.padding(start = 44.dp, top = 6.dp, end = 4.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 TierPill(item.amount(entry), item.target, item.floorTarget)
                 if (item.floorKept(entry)) Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(R.string.floor_kept), color = c.floor, fontSize = 12.sp, modifier = Modifier.weight(1f))
+                    Text(stringResource(R.string.floor_kept), color = c.floor, fontSize = LumeTokens.Type.Caption, modifier = Modifier.weight(1f))
                     if (!finished) LumeButton(stringResource(R.string.floor_park), { onChange(entry.copy(floorParked = true)) },
                         tint = c.floor, haptic = HapticToken.CHECK_COMPLETE)
                 }
@@ -162,7 +163,7 @@ private fun ExceptionLine(item: Item, entry: Entry, onChange: (Entry) -> Unit) {
     if (entry.slipped || entry.exception == ExceptionState.PLANNED) return
     var message by remember(item.id) { mutableStateOf<Int?>(null) }
     Column(Modifier.padding(start = 44.dp)) {
-        Text(stringResource(R.string.rule_exception), color = c.seal, fontSize = 12.sp, fontWeight = FontWeight.Medium,
+        Text(stringResource(R.string.rule_exception), color = c.seal, fontSize = LumeTokens.Type.Caption, fontWeight = FontWeight.Medium,
             modifier = Modifier.pressable().clickable {
                 if (store.declareException(java.time.LocalDate.now(), item.id)) {
                     message = null
@@ -182,7 +183,7 @@ fun TaskRow(task: Task, onDone: () -> Unit) {
     Row(Modifier.fillMaxWidth().padding(start = 4.dp, end = 12.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         LumeCheck(false, { onDone() })
         Column(Modifier.weight(1f)) {
-            Text(task.title, color = c.text, fontSize = 16.sp, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(task.title, color = c.text, fontSize = LumeTokens.Type.Body, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis)
             task.remindAt?.let { Detail("%02d:%02d".format(it / 60, it % 60)) }
         }
         KindBadge(stringResource(R.string.add_badge_task))
@@ -194,7 +195,7 @@ fun UpcomingRow(title: String, badge: Int, remindAt: Int?) {
     val c = Lume.colors
     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
-            Text(title, color = c.textSecondary, fontSize = 16.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(title, color = c.textSecondary, fontSize = LumeTokens.Type.Body, maxLines = 2, overflow = TextOverflow.Ellipsis)
             remindAt?.let { Detail("%02d:%02d".format(it / 60, it % 60)) }
         }
         KindBadge(stringResource(badge))
@@ -209,7 +210,7 @@ fun DrawerPill(summary: String, expanded: Boolean, onToggle: () -> Unit, modifie
     Column(modifier.fillMaxWidth().animateContentSize(LumeMotion.spatial())) {
         Row(
             Modifier.padding(horizontal = 16.dp, vertical = 4.dp).fillMaxWidth().pressable()
-                .clip(RoundedCornerShape(14.dp)).background(c.grouped)
+                .clip(RoundedCornerShape(LumeTokens.Shape.M)).background(c.grouped)
                 .clickable { haptics.tick(); onToggle() }.padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {

@@ -17,6 +17,7 @@ import java.time.LocalTime
  */
 class LogCheckReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        if (!LumeTrust.fromPeer(intent)) return
         if (intent.action != Ecosystem.ACTION_LOG_CHECK) return
         val id = intent.getStringExtra("item") ?: return
         val done = intent.getBooleanExtra("done", true)
@@ -34,6 +35,7 @@ class LogCheckReceiver : BroadcastReceiver() {
 /** Ren, Katachi and Vow send a small JSON summary, kept for the Momentum screen. */
 class EcoMetricsReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        if (!LumeTrust.fromPeer(intent)) return
         if (intent.action != Ecosystem.ACTION_ECO_METRICS) return
         val source = intent.getStringExtra("source") ?: return
         val payload = intent.getStringExtra("payload") ?: return
@@ -48,6 +50,7 @@ class EcoMetricsReceiver : BroadcastReceiver() {
  */
 class RuleEventReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        if (!LumeTrust.fromPeer(intent)) return
         if (intent.action != Ecosystem.ACTION_RULE_EVENT) return
         val id = intent.getStringExtra("rule") ?: return
         val kind = intent.getStringExtra("kind") ?: return
@@ -73,6 +76,7 @@ class RuleEventReceiver : BroadcastReceiver() {
  */
 class SleepLockSyncReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        if (!LumeTrust.fromPeer(intent)) return
         if (intent.action != SleepLockStore.ACTION_SYNC || !intent.hasExtra("on")) return
         SleepLockStore.applyRemote(
             context,

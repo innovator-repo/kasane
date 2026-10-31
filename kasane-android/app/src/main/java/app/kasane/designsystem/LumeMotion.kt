@@ -19,14 +19,14 @@ import kotlinx.coroutines.launch
 
 /** Lume motion tokens. Springs for movement and scale, critically damped springs for colour and progress. */
 object LumeMotion {
-    const val PRESSED_SCALE = 0.97f
-    const val BREATH_MS = 4000
+    const val PRESSED_SCALE = LumeTokens.Motion.PRESSED_SCALE
+    const val BREATH_MS = LumeTokens.Motion.BREATH_MS
 
     /** Movement, scale, sheets and card flips: a little overshoot. */
-    fun <T> spatial(): FiniteAnimationSpec<T> = spring(dampingRatio = 0.75f, stiffness = 380f)
+    fun <T> spatial(): FiniteAnimationSpec<T> = spring(dampingRatio = LumeTokens.Motion.SPATIAL_DAMPING, stiffness = LumeTokens.Motion.SPATIAL_STIFFNESS)
 
     /** Colour, progress fills and opacity: no overshoot, so nothing flickers. */
-    fun <T> effects(): FiniteAnimationSpec<T> = spring(dampingRatio = 1.0f, stiffness = 1500f)
+    fun <T> effects(): FiniteAnimationSpec<T> = spring(dampingRatio = LumeTokens.Motion.EFFECTS_DAMPING, stiffness = LumeTokens.Motion.EFFECTS_STIFFNESS)
 
     /** EaseInOutSine, for the breathing pace. */
     val EaseInOutSine: Easing = Easing { x -> (-(Math.cos(Math.PI * x) - 1) / 2).toFloat() }

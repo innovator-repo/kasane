@@ -3,6 +3,7 @@ package app.kasane
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import app.kasane.ipc.LumeTrust
 import java.time.LocalDate
 
 /**
@@ -12,6 +13,7 @@ import java.time.LocalDate
  */
 class PuzzleCountReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        if (!LumeTrust.fromPeer(intent)) return
         if (intent.action != ACTION || intent.getStringExtra("item") != ITEM) return
         val date = runCatching { LocalDate.parse(intent.getStringExtra("date")) }.getOrNull() ?: return
         val today = LocalDate.now()

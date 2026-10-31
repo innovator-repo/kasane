@@ -7,7 +7,7 @@
     <string name="tab_today">Today</string>
     <string name="tab_momentum">Momentum</string>
     <string name="tab_week">Week</string>
-    <string name="tab_tasks">Tasks</string>
+    <string name="tab_tasks">Lists</string>
 
     <string name="today_progress">%1$d of %2$d done</string>
     <string name="block_morning">Morning</string>
@@ -65,6 +65,13 @@
     <string name="week_not_enough">Not enough days yet. This fills in after a couple of weeks of logging.</string>
     <string name="loading">Working it out…</string>
 
+    <string name="lists_chip">List</string>
+    <string name="lists_default">My tasks</string>
+    <string name="lists_in">List: %1$s</string>
+    <string name="lists_new">New list</string>
+    <string name="lists_name">List name</string>
+    <string name="lists_delete">Delete list %1$s</string>
+    <string name="lists_delete_explain">The tasks in it move to My tasks. Nothing is lost.</string>
     <string name="tasks_empty">No tasks coming up. Add exams, one-off things and tasks that repeat here.</string>
     <string name="tasks_add">Add task</string>
     <string name="tasks_what">What</string>
@@ -85,6 +92,30 @@
     <string name="tasks_starts">Starts %1$s</string>
     <string name="tasks_done_today">Done today</string>
     <string name="tasks_next">next %1$s</string>
+    <string name="repeat_title">Repeat</string>
+    <string name="repeat_none">Don\'t repeat</string>
+    <string name="repeat_doesnt">This task doesn\'t repeat.</string>
+    <string name="repeat_every">Every</string>
+    <string name="repeat_minute">minute</string>
+    <string name="repeat_hour">hour</string>
+    <string name="repeat_day">day</string>
+    <string name="repeat_week">week</string>
+    <string name="repeat_month">month</string>
+    <string name="repeat_year">year</string>
+    <string name="repeat_on_day">Repeat on the %1$s</string>
+    <string name="repeat_on_nth">Repeat on the %1$s</string>
+    <string name="repeat_pick_dates">Select dates to repeat</string>
+    <string name="repeat_on_date_year">Repeat on %1$s</string>
+    <string name="repeat_on_nth_year">Repeat on the %1$s of %2$s</string>
+    <string name="repeat_pick_months">Select months to repeat on the %1$s day</string>
+    <string name="repeat_duration">Duration</string>
+    <string name="repeat_forever">Forever</string>
+    <string name="repeat_count">Specific number of times</string>
+    <string name="repeat_times_total">times total</string>
+    <string name="repeat_until">Until</string>
+    <string name="repeat_until_date">Until %1$s</string>
+    <string name="tasks_edit">Edit task</string>
+    <string name="tasks_sub_daily_needs_time">Repeating every few minutes or hours needs a reminder time.</string>
     <string name="tasks_in_lock">That time is inside the 22:00 to 08:00 sleep lock, so the reminder will be skipped.</string>
     <string name="save">Save</string>
     <string name="cancel">Cancel</string>
@@ -192,7 +223,7 @@
 
     <!-- Lume: widget -->
     <string name="widget_horizon_name">Lume Horizon</string>
-    <string name="widget_horizon_description">Momentum, the next habit, and quick launch for Ren, Katachi and Sigil.</string>
+    <string name="widget_horizon_description">Overdue, today and upcoming tasks with habits, tick them off or snooze them here, and quick launch for Ren, Katachi and Sigil below.</string>
     <string name="widget_horizon_sleep_lock">Sleep lock</string>
     <string name="widget_horizon_momentum">%1$d%% momentum</string>
     <string name="widget_horizon_rules">%1$d of %2$d rules kept</string>
@@ -201,6 +232,13 @@
     <string name="widget_horizon_ren">%1$d due</string>
     <string name="widget_horizon_katachi">%1$d of %2$d</string>
     <string name="widget_horizon_sigil">Note</string>
+    <string name="widget_horizon_up_next">Up next</string>
+    <string name="widget_horizon_upcoming">Later</string>
+    <string name="widget_horizon_week">Next 7 days</string>
+    <string name="widget_horizon_filter_all">All</string>
+    <string name="widget_horizon_snooze">Tomorrow</string>
+    <string name="widget_horizon_completed_header">Completed · %1$d</string>
+    <string name="widget_horizon_completed">%1$d done today</string>
     <string name="widget_horizon_log">Log</string>
     <string name="stat_strongest">Strongest</string>
     <string name="stat_weakest">Needs most care</string>

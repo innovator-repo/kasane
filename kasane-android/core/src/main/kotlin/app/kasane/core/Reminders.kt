@@ -10,8 +10,8 @@ data class Reminder(val key: String, val title: String, val at: LocalDateTime, v
 object Reminders {
     /**
      * The next reminder for every item and task, from `now`, skipping items
-     * already done today, days an item is not due, and items and repeating
-     * tasks inside the sleep lock.
+     * already done today, days an item is not due, and items inside the sleep
+     * lock. Task reminders are never held back by the lock.
      */
     fun upcoming(journal: Journal, now: LocalDateTime, lock: SleepLock = SleepLock()): List<Reminder> {
         val out = mutableListOf<Reminder>()
@@ -36,13 +36,8 @@ object Reminders {
         for (task in journal.tasks) {
             val minute = task.remindAt ?: continue
             if (task.repeats) {
-                val time = LocalTime.of(minute / 60, minute % 60)
-                if (lock.isLocked(time)) continue
-                // The next open occurrence still ahead of now: today's if its time has not passed, else the one after.
-                val first = task.nextDate(now.toLocalDate()) ?: continue
-                val at = LocalDateTime.of(first, time).takeIf { it.isAfter(now) }
-                    ?: task.nextDate(first.plusDays(1))?.let { LocalDateTime.of(it, time) }?.takeIf { it.isAfter(now) }
-                    ?: continue
+                // The next open occurrence ahead of now. Days already ticked off are skipped.
+                val at = task.nextOccurrence(now) ?: continue
                 out.add(Reminder("task:${task.id}", task.title, at, task.alert))
                 continue
             }
