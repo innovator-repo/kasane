@@ -49,9 +49,13 @@ jobs:
         if: env.FULL == 'true'
         run: gradle -PcoreOnly :core:test
       - name: Build and sign with the shared release key
+        env:
+          SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+          SIGNING_KEYSTORE_PASSWORD: ${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
         run: |
-          export KASANE_KEYSTORE="$GITHUB_WORKSPACE/signing/release.jks"
-          export KASANE_KEYSTORE_PASSWORD="$(cat "$GITHUB_WORKSPACE/signing/password.txt")"
+          export KASANE_KEYSTORE="$RUNNER_TEMP/release.jks"
+          echo "$SIGNING_KEYSTORE_BASE64" | base64 -d > "$KASANE_KEYSTORE"
+          export KASANE_KEYSTORE_PASSWORD="$SIGNING_KEYSTORE_PASSWORD"
           echo "::add-mask::$KASANE_KEYSTORE_PASSWORD"
           if [ "$FULL" = "true" ]; then echo "VARIANT=release" >> "$GITHUB_ENV"; gradle :app:assembleRelease
           else echo "VARIANT=personal" >> "$GITHUB_ENV"; gradle :app:assemblePersonal; fi

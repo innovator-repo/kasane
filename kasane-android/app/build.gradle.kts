@@ -25,7 +25,7 @@ android {
             keyAlias = "androiddebugkey"
             keyPassword = "android"
         }
-        // The release key every app shares (see signing/ at the repo root), from KASANE_* variables.
+        // The release key every app shares (supplied by CI secrets, never committed), from KASANE_* variables.
         val keystorePath = System.getenv("KASANE_KEYSTORE")
         val keystorePassword = System.getenv("KASANE_KEYSTORE_PASSWORD")
         if (!keystorePath.isNullOrBlank() && !keystorePassword.isNullOrBlank()) {
