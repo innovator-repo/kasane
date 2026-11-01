@@ -32,11 +32,6 @@ jobs:
       FULL: ${{ inputs.release == true }}
     steps:
       - uses: actions/checkout@v4
-      # The shared release key lives on its own branch of this private repository.
-      - uses: actions/checkout@v4
-        with:
-          ref: signing-keys
-          path: keys
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -55,8 +50,8 @@ jobs:
         run: gradle -PcoreOnly :core:test
       - name: Build and sign with the shared release key
         run: |
-          export KASANE_KEYSTORE="$GITHUB_WORKSPACE/keys/release.jks"
-          export KASANE_KEYSTORE_PASSWORD="$(cat "$GITHUB_WORKSPACE/keys/password.txt")"
+          export KASANE_KEYSTORE="$GITHUB_WORKSPACE/signing/release.jks"
+          export KASANE_KEYSTORE_PASSWORD="$(cat "$GITHUB_WORKSPACE/signing/password.txt")"
           echo "::add-mask::$KASANE_KEYSTORE_PASSWORD"
           if [ "$FULL" = "true" ]; then echo "VARIANT=release" >> "$GITHUB_ENV"; gradle :app:assembleRelease
           else echo "VARIANT=personal" >> "$GITHUB_ENV"; gradle :app:assemblePersonal; fi

@@ -3,7 +3,7 @@
 #   tools/build-local.sh            fast build (no R8), a minute or two after the first run
 #   tools/build-local.sh release    the full minified release build
 # Needs JDK 17+, the Android SDK (ANDROID_HOME) and Gradle (or ./gradlew), and the shared key:
-# download release.jks and password.txt from the signing-keys branch yourself and point at them:
+# download release.jks and password.txt from signing/ at the repo root and point at them:
 #   KASANE_KEYSTORE=/path/release.jks KASANE_KEYSTORE_PASSWORD="$(cat /path/password.txt)" tools/build-local.sh
 set -euo pipefail
 cd "$(dirname "$0")/.."
